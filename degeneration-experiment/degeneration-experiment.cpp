@@ -3,9 +3,10 @@
 
 int main()
 {
-    DegenerationExperiment experiment(10);
+    const int experimentTrials = 10;
+    DegenerationExperiment experiment{experimentTrials};
 
-    if (experiment.start())
+    if (experiment.initialize())
     {
         experiment.run();
         experiment.stop();
