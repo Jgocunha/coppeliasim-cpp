@@ -10,10 +10,20 @@ project ("degeneration-experiment")
 
 # Set the path to the CoppeliaSim API include directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libs/coppeliasim)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Add source files
-add_executable(degeneration-experiment "degeneration-experiment.cpp"
- "libs/coppeliasim/extApi.c" "libs/coppeliasim/extApiPlatform.c")
+set(SOURCES
+    degeneration-experiment.cpp
+    libs/coppeliasim/extApi.c
+    libs/coppeliasim/extApiPlatform.c
+    src/logger.cpp
+	src/experiment.cpp
+	src/client.cpp
+)
+
+# Add executable
+add_executable(degeneration-experiment ${SOURCES})
 
 # Define preprocessor definitions
 target_compile_definitions(degeneration-experiment PRIVATE NON_MATLAB_PARSING MAX_EXT_API_CONNECTIONS=255 DO_NOT_USE_SHARED_MEMORY)
