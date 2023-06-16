@@ -1,5 +1,16 @@
 #include "./experiment.h"
 
+// Define and initialize the map
+std::map<BoxToPlaceShape, std::string> boxToPlaceShapeMap = {
+	{BoxToPlaceShape::BOX_1, "BOX_1"},
+	{BoxToPlaceShape::BOX_2, "BOX_2"},
+	{BoxToPlaceShape::BOX_3, "BOX_3"},
+	{BoxToPlaceShape::BOX_4, "BOX_4"},
+	{BoxToPlaceShape::BOX_5, "BOX_5"},
+	{BoxToPlaceShape::BOX_6, "BOX_6"},
+	{BoxToPlaceShape::BOX_7, "BOX_7"}
+};
+
 DegenerationExperiment::DegenerationExperiment(const int& trials)
 	:trials(trials)
 {
@@ -9,25 +20,25 @@ bool DegenerationExperiment::initialize()
 {
 	if (client.initialize())
 	{
-		setupSignals();
+		resetSignals();
 		return true;
 	}
 	return false;
 }
 
-void DegenerationExperiment::setupSignals()
+void DegenerationExperiment::resetSignals()
 {
-	simxSetIntegerSignal(client.getClientID(), CREATE_SHAPE_SIGNAL, 0, simx_opmode_blocking);
-	simxSetIntegerSignal(client.getClientID(), PICK_UP_SHAPE_SIGNAL, 0, simx_opmode_blocking);
-	simxSetIntegerSignal(client.getClientID(), PLACE_SHAPE_SIGNAL, 0, simx_opmode_blocking);
+	client.setIntegerSignal(CREATE_SHAPE_SIGNAL, 0);
+	client.setIntegerSignal(SHAPE_CREATED_SIGNAL, 0);
+	client.setIntegerSignal(GRASP_SHAPE_SIGNAL, 0);
+	client.setIntegerSignal(SHAPE_GRASPED_SIGNAL, 0);
+	client.setIntegerSignal(PLACE_SHAPE_SIGNAL, 0);
+	client.setIntegerSignal(SHAPE_PLACED_SIGNAL, 0);
 
-	const char* signalValue = "UNDEFINED";
-	const simxUChar* signalData = reinterpret_cast<const simxUChar*>(signalValue);
-	simxInt signalLength = static_cast<simxInt>(strlen(signalValue));
+	client.setStringSignal(SHAPE_COLOR_SIGNAL, "UNDEFINED");
+	client.setStringSignal(SHAPE_BOX_SIGNAL, "UNDEFINED");
 
-	simxSetStringSignal(client.getClientID(), SHAPE_COLOR_SIGNAL, signalData, signalLength, simx_opmode_blocking);
-
-	client.log("All signals were initialized.");
+	client.log("All signals were reset.");
 }
 
 void DegenerationExperiment::run()
@@ -36,67 +47,72 @@ void DegenerationExperiment::run()
 
 	while (currentTrial <= trials)
 	{
-		// create shape
 		createShape();
 
-		// read shape color
 		cuboid.name = "Cuboid_" + std::to_string(currentTrial);
 		getShapeParameters();
 		
-		// compute what is the target box
 		computeTargetBox();
 
-		// go pick shape
 		pickUpShape();
 
-		// go place shape
 		placeShape();
-
-		// go to home position
 
 		Sleep(2000);
 
+		resetSignals();
 		currentTrial++;
 	}
 }
 
 void DegenerationExperiment::stop()
 {
-	simxStopSimulation(client.getClientID(), simx_opmode_blocking);
-	client.log("Stopped simulation.");
+	client.stopSimulation();
 }
 
 void DegenerationExperiment::createShape()
 {
-	simxSetIntegerSignal(client.getClientID(), CREATE_SHAPE_SIGNAL, 1, simx_opmode_blocking);
+	client.setIntegerSignal(CREATE_SHAPE_SIGNAL, 1);
 
-	client.log("CREATE_SHAPE_SIGNAL sent to CoppeliaSim.");
+	int wasShapeCreated = 0;
+	do
+	{
+		wasShapeCreated = client.getIntegerSignal(SHAPE_CREATED_SIGNAL);
+		Sleep(100);
+	} while (!wasShapeCreated);
 }
 
 void DegenerationExperiment::getShapeParameters()
 {
 	simxGetObjectHandle(client.getClientID(), cuboid.name.c_str(), &cuboid.handle, simx_opmode_blocking);
 
-	simxInt signalLength;
-	simxUChar* signalValue;
-	simxGetAndClearStringSignal(client.getClientID(), SHAPE_COLOR_SIGNAL, &signalValue, &signalLength, simx_opmode_blocking);
-	cuboid.color = std::string(reinterpret_cast<char*>(signalValue), signalLength);
+	cuboid.color = client.getStringSignal(SHAPE_COLOR_SIGNAL);
 
-	client.log("Cuboid created with handle: " + std::to_string(cuboid.handle) + " and color " + cuboid.color);
+	//client.log("Cuboid created with handle: " + std::to_string(cuboid.handle) + " and color " + cuboid.color);
 }
 
 void DegenerationExperiment::pickUpShape()
 {
-	simxSetIntegerSignal(client.getClientID(), PICK_UP_SHAPE_SIGNAL, 1, simx_opmode_oneshot);
+	client.setIntegerSignal(GRASP_SHAPE_SIGNAL, 1);
 
-	client.log("Sent PICK_UP_SHAPE_SIGNAL to CoppeliaSim.");
+	int wasShapeGrasped = 0;
+	do
+	{
+		wasShapeGrasped = client.getIntegerSignal(SHAPE_GRASPED_SIGNAL);
+		Sleep(100);
+	} while (!wasShapeGrasped);
 }
 
 void DegenerationExperiment::placeShape()
 {
-	simxSetIntegerSignal(client.getClientID(), PLACE_SHAPE_SIGNAL, box, simx_opmode_oneshot);
+	client.setIntegerSignal(PLACE_SHAPE_SIGNAL, 1);
 
-	client.log("Sent PLACE_SHAPE_SIGNAL to CoppeliaSim.");
+	int wasShapePlaced = 0;
+	do
+	{
+		wasShapePlaced = client.getIntegerSignal(SHAPE_PLACED_SIGNAL);
+		Sleep(100);
+	} while (!wasShapePlaced);
 }
 
 void DegenerationExperiment::computeTargetBox()
@@ -143,4 +159,6 @@ void DegenerationExperiment::computeTargetBox()
 		box = BoxToPlaceShape::BOX_1; // Default to BOX_1 if the color is unknown
 		client.log("Unknown color. Target box set to BOX_1");
 	}
+
+	client.setStringSignal(SHAPE_BOX_SIGNAL, boxToPlaceShapeMap[box]);
 }

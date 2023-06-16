@@ -6,6 +6,8 @@ int main()
     const int experimentTrials = 10;
     DegenerationExperiment experiment{experimentTrials};
 
+    Sleep(2000);
+
     if (experiment.initialize())
     {
         experiment.run();

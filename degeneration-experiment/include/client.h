@@ -32,6 +32,13 @@ public:
 	
 	void startSimulation();
 	void stopSimulation();
+
+	void setIntegerSignal(const std::string& signalName, const int& signalValue);
+	void setStringSignal(const std::string& signalName, const std::string& signalValue);
+
+	int getIntegerSignal(const std::string& signalName);
+	std::string getStringSignal(const std::string& signalName);
+
 	void log(const std::string& message);
 	
 	~CoppeliaSimClient();

@@ -2,10 +2,19 @@
 #pragma once
 
 // define signals here.
-#define CREATE_SHAPE_SIGNAL "createShapeSignal"
-#define SHAPE_COLOR_SIGNAL "shapeColorSignal"
-#define PICK_UP_SHAPE_SIGNAL "pickUpShapeSignal"
-#define PLACE_SHAPE_SIGNAL "placeShapeSignal"
+#define CREATE_SHAPE_SIGNAL "createShape"
+#define SHAPE_CREATED_SIGNAL "shapeCreated"
+
+#define GRASP_SHAPE_SIGNAL "graspShape"
+#define SHAPE_GRASPED_SIGNAL "shapeGrasped"
+
+#define PLACE_SHAPE_SIGNAL "placeShape"
+#define SHAPE_PLACED_SIGNAL "shapePlaced"
+
+#define SHAPE_COLOR_SIGNAL "shapeColor"
+#define SHAPE_BOX_SIGNAL "shapeBox"
+
+#include <map>
 
 #include "./client.h"
 
@@ -27,6 +36,7 @@ enum BoxToPlaceShape
 	BOX_7, // violet
 };
 
+extern std::map<BoxToPlaceShape, std::string> boxToPlaceShapeMap;
 
 class DegenerationExperiment
 {
@@ -44,7 +54,7 @@ public:
 	void stop();
 
 private:
-	void setupSignals();
+	void resetSignals();
 	void createShape();
 	void getShapeParameters();
 	void pickUpShape();

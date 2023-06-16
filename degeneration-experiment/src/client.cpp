@@ -33,11 +33,48 @@ int CoppeliaSimClient::getClientID()
 void CoppeliaSimClient::startSimulation()
 {
 	simxStartSimulation(clientID, simx_opmode_blocking);
+	log("Simulation started.");
 }
 
 void CoppeliaSimClient::stopSimulation()
 {
 	simxStopSimulation(clientID, simx_opmode_blocking);
+	log("Simulation stopped.");
+}
+
+void CoppeliaSimClient::setIntegerSignal(const std::string& signalName, const int& signalValue)
+{
+	simxSetIntegerSignal(clientID, signalName.c_str(), signalValue, simx_opmode_oneshot);
+	log("Signal: " + signalName + " set to: " + std::to_string(signalValue));
+}
+
+void CoppeliaSimClient::setStringSignal(const std::string& signalName, const std::string& signalValue)
+{
+	const simxUChar* signalData = reinterpret_cast<const simxUChar*>(signalValue.c_str());
+	simxInt signalLength = static_cast<simxInt>(strlen(signalValue.c_str()));
+	simxSetStringSignal(clientID, signalName.c_str(), signalData, signalLength, simx_opmode_blocking);
+	log("Signal: " + signalName + " set to: " + signalValue);
+}
+
+int CoppeliaSimClient::getIntegerSignal(const std::string& signalName)
+{
+	simxInt signalValue;
+	simxGetIntegerSignal(clientID, signalName.c_str(), &signalValue, simx_opmode_blocking);
+	//setIntegerSignal(signalName.c_str(), 0);
+	log("Signal: " + signalName + " read as: " + std::to_string(signalValue));
+	return signalValue;
+}
+
+std::string CoppeliaSimClient::getStringSignal(const std::string& signalName)
+{
+	simxInt signalLength;
+	simxUChar* signalValue;
+	std::string internalSignalValue;
+	simxGetAndClearStringSignal(clientID, signalName.c_str(), &signalValue, &signalLength, simx_opmode_blocking);
+	
+	internalSignalValue = std::string(reinterpret_cast<char*>(signalValue), signalLength);
+	log("Signal: " + signalName + " read as: " + internalSignalValue);
+	return internalSignalValue;
 }
 
 void CoppeliaSimClient::log(const std::string& message)
