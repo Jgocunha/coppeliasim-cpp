@@ -87,8 +87,6 @@ void DegenerationExperiment::getShapeParameters()
 	simxGetObjectHandle(client.getClientID(), cuboid.name.c_str(), &cuboid.handle, simx_opmode_blocking);
 
 	cuboid.color = client.getStringSignal(SHAPE_COLOR_SIGNAL);
-
-	//client.log("Cuboid created with handle: " + std::to_string(cuboid.handle) + " and color " + cuboid.color);
 }
 
 void DegenerationExperiment::pickUpShape()

@@ -3,7 +3,7 @@
 
 int main()
 {
-    const int experimentTrials = 10;
+    const int experimentTrials = 50;
     DegenerationExperiment experiment{experimentTrials};
 
     Sleep(2000);
