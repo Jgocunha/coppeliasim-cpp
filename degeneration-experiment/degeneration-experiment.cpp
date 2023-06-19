@@ -1,6 +1,5 @@
 ﻿#include "degeneration-experiment.h"
 
-
 int main()
 {
     const int experimentTrials = 50;

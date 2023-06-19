@@ -18,8 +18,8 @@ set(SOURCES
     libs/coppeliasim/extApi.c
     libs/coppeliasim/extApiPlatform.c
     src/logger.cpp
-	src/experiment.cpp
-	src/client.cpp
+    src/experiment.cpp
+    src/client.cpp
 )
 
 # Add executable
@@ -29,9 +29,10 @@ add_executable(degeneration-experiment ${SOURCES})
 target_compile_definitions(degeneration-experiment PRIVATE NON_MATLAB_PARSING MAX_EXT_API_CONNECTIONS=255 DO_NOT_USE_SHARED_MEMORY)
 
 # Link against the CoppeliaSim API library
-target_link_libraries(degeneration-experiment ${CMAKE_CURRENT_SOURCE_DIR}/libs/coppeliasim/)
+target_link_libraries(degeneration-experiment
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/coppeliasim/
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET degeneration-experiment PROPERTY CXX_STANDARD 20)
 endif()
-
