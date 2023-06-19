@@ -10,6 +10,7 @@ int main()
 	if (client.initialize())
 	{
 		client.log("You can log info to the Command line and CoppeliaSim!");
+		client.stopSimulation();
 	}
 	else
 	{
