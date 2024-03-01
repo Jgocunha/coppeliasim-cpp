@@ -1,7 +1,5 @@
 ﻿
-
-#include "coppeliasim-cpp-client.h"
-
+#include "client.h"
 
 int main()
 {

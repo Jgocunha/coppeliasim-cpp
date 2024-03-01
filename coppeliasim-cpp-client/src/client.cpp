@@ -1,4 +1,4 @@
-#include "./client.h"
+#include "client.h"
 
 CoppeliaSimClient::CoppeliaSimClient(const std::string& connectionAddress, const int& connectionPort)
 	: clientID(-1), connectionPort(connectionPort)
@@ -32,7 +32,7 @@ int CoppeliaSimClient::getClientID()
 
 void CoppeliaSimClient::startSimulation()
 {
-	simxStartSimulation(clientID, simx_opmode_blocking);
+	simxStartSimulation(clientID, simx_opmode_oneshot);
 	log("Simulation started.");
 }
 

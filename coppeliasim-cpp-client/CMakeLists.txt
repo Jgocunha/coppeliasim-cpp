@@ -1,48 +1,31 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required(VERSION 3.15)
+project(coppeliasim-cpp-client DESCRIPTION "A C++ library that interfaces with CoppeliaSim using their C++ API." LANGUAGES CXX)
 
-# Enable Hot Reload for MSVC compilers if supported.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
+# Library version
+set(COPPELIASIM_CLIENT_VERSION_MAJOR 1)
+set(COPPELIASIM_CLIENT_VERSION_MINOR 0)
+set(COPPELIASIM_CLIENT_VERSION ${COPPELIASIM_CLIENT_VERSION_MAJOR}.${COPPELIASIM_CLIENT_VERSION_MINOR})
 
-project ("coppeliasim-cpp-client")
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set the path to the CoppeliaSim API include directory
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/coppeliasim)
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Source and header files
+set(libs lib/extApi.c lib/extApiPlatform.c)
+set(sources src/client.cpp)
+#set(headers include/client.h)
 
-# Add source files
-#set(SOURCES
-#    coppeliasim-cpp-client.cpp
-#    lib/coppeliasim/extApi.c
-#    lib/coppeliasim/extApiPlatform.c
-#    src/client.cpp
-#)
+# Library target
+add_library(${PROJECT_NAME} lib/extApi.c lib/extApiPlatform.c src/client.cpp)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/lib)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-add_library(coppeliasim-cpp-client
-	lib/coppeliasim/extApi.c
-    lib/coppeliasim/extApiPlatform.c
-    src/client.cpp
-)
-
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET coppeliasim-cpp-client PROPERTY CXX_STANDARD 20)
-endif()
-
-target_include_directories(coppeliasim-cpp-client PUBLIC ${PROJECT_SOURCE_DIR}/lib/coppeliasim)
-target_include_directories(coppeliasim-cpp-client PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# For the library target
+target_compile_definitions(${PROJECT_NAME} PRIVATE NON_MATLAB_PARSING MAX_EXT_API_CONNECTIONS=255 DO_NOT_USE_SHARED_MEMORY)
 
 
-# Add source to this project's executable.
-add_executable (launch-coppeliasim-cpp-client "coppeliasim-cpp-client.cpp")
-
-# Define preprocessor definitions
-target_compile_definitions(coppeliasim-cpp-client PRIVATE NON_MATLAB_PARSING MAX_EXT_API_CONNECTIONS=255 DO_NOT_USE_SHARED_MEMORY)
-
-# Link against the CoppeliaSim API library
-target_link_libraries(launch-coppeliasim-cpp-client PRIVATE coppeliasim-cpp-client)
-
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET launch-coppeliasim-cpp-client PROPERTY CXX_STANDARD 20)
-endif()
+# Executable target
+set(EXE_PROJECT ${PROJECT_NAME}-exe)
+add_executable(${EXE_PROJECT} "client-example.cpp")
+target_link_libraries(${EXE_PROJECT} PRIVATE ${PROJECT_NAME})
+#target_include_directories(${EXE_PROJECT} PRIVATE include lib)
