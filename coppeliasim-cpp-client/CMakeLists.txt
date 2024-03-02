@@ -1,48 +1,127 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.15)
 
-# Enable Hot Reload for MSVC compilers if supported.
-if (POLICY CMP0141)
-  cmake_policy(SET CMP0141 NEW)
-  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-endif()
-
-project ("coppeliasim-cpp-client")
-
-# Set the path to the CoppeliaSim API include directory
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/coppeliasim)
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# Add source files
-#set(SOURCES
-#    coppeliasim-cpp-client.cpp
-#    lib/coppeliasim/extApi.c
-#    lib/coppeliasim/extApiPlatform.c
-#    src/client.cpp
-#)
-
-add_library(coppeliasim-cpp-client
-	lib/coppeliasim/extApi.c
-    lib/coppeliasim/extApiPlatform.c
-    src/client.cpp
+project(coppeliasim-cpp-client
+    DESCRIPTION "A C++ library to interface with Coppeliasim."
+    #LANGUAGES CXX
 )
 
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET coppeliasim-cpp-client PROPERTY CXX_STANDARD 20)
+# Define library version
+set(COPPELIASIM_CLIENT_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
+set(COPPELIASIM_CLIENT_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
+set(COPPELIASIM_CLIENT_VERSION ${COPPELIASIM_CLIENT_VERSION_MAJOR}.${COPPELIASIM_CLIENT_VERSION_MINOR} CACHE STRING "version" FORCE)
+
+set(COPPELIASIM_CLIENT_LIB_PREFIX "release")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(COPPELIASIM_CLIENT_LIB_PREFIX "debug")
 endif()
 
-target_include_directories(coppeliasim-cpp-client PUBLIC ${PROJECT_SOURCE_DIR}/lib/coppeliasim)
-target_include_directories(coppeliasim-cpp-client PUBLIC ${PROJECT_SOURCE_DIR}/include)
+set(COPPELIASIM_CLIENT_INC_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include")
+set(COPPELIASIM_CLIENT_RUNTIME_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
+set(COPPELIASIM_CLIENT_LIBRARY_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${COPPELIASIM_CLIENT_LIB_PREFIX}")
+set(COPPELIASIM_CLIENT_ARCHIVE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${COPPELIASIM_CLIENT_LIB_PREFIX}")
+set(COPPELIASIM_CLIENT_FRAMEWORK_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
+set(COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}")
+set(COPPELIASIM_CLIENT_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}")
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set sources
+set(sources
+    src/client.cpp
+
+    lib/extApi.c
+    lib/extApiPlatform.c
+
+    lib/simLib/luaFunctionData.cpp
+    lib/simLib/luaFunctionDataItem.cpp
+    lib/simLib/scriptFunctionData.cpp
+    lib/simLib/scriptFunctionDataItem.cpp
+    lib/simLib/shared_memory.c
+    #lib/simLib/simLib-old.cpp
+    #lib/simLib/simLib-old2.cpp
+    lib/simLib/simLib.cpp
+    lib/simLib/socketInConnection.cpp
+    lib/simLib/socketOutConnection.cpp
+)
+
+# Set headers
+set(headers
+	include/client.h
+
+    lib/extApi.h
+    lib/extApiPlatform.h
+	lib/extApiInternal.h
+
+    lib/simLib/luaFunctionData.h
+	lib/simLib/luaFunctionDataItem.h
+	lib/simLib/scriptFunctionData.h
+	lib/simLib/scriptFunctionDataItem.h
+	lib/simLib/shared_memory.h
+    lib/simLib/simConst.h
+    lib/simLib/simExp.h
+	#lib/simLib/simLib-old.h
+	#lib/simLib/simLib-old2.h
+	lib/simLib/simLib.h
+    lib/simLib/simTypes.h
+	lib/simLib/socketInConnection.h
+	lib/simLib/socketOutConnection.h
+    lib/simLib/_dirent.h
+)
+
+add_library(coppeliasim-cpp-client
+	${sources}
+	${headers}
+)
+
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}> 
+    $<INSTALL_INTERFACE:${COPPELIASIM_CLIENT_INC_INSTALL_DIR}> 
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib
+)
+
+target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC
+    COPPELIASIM_CLIENT=1
+    COPPELIASIM_CLIENT_VERSION_MAJOR=${COPPELIASIM_CLIENT_VERSION_MAJOR}
+    COPPELIASIM_CLIENT_VERSION_MINOR=${COPPELIASIM_CLIENT_VERSION_MINOR}
+    NON_MATLAB_PARSING 
+    MAX_EXT_API_CONNECTIONS=255 
+    DO_NOT_USE_SHARED_MEMORY
+)
+
+set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
+    OUTPUT_NAME "${CMAKE_PROJECT_NAME}-${COPPELIASIM_CLIENT_VERSION}"
+    POSITION_INDEPENDENT_CODE ON
+)
+
+install(TARGETS ${CMAKE_PROJECT_NAME} EXPORT ${CMAKE_PROJECT_NAME}Targets
+    RUNTIME       DESTINATION ${COPPELIASIM_CLIENT_RUNTIME_INSTALL_DIR}
+    LIBRARY       DESTINATION ${COPPELIASIM_CLIENT_LIBRARY_INSTALL_DIR}
+    ARCHIVE       DESTINATION ${COPPELIASIM_CLIENT_ARCHIVE_INSTALL_DIR}
+    FRAMEWORK     DESTINATION ${COPPELIASIM_CLIENT_FRAMEWORK_INSTALL_DIR}
+)
+
+include(CMakePackageConfigHelpers)
+set(version_file "${CMAKE_CURRENT_BINARY_DIR}/cmake/${CMAKE_PROJECT_NAME}-config-version.cmake")
+write_basic_package_version_file(${version_file}
+    VERSION ${COPPELIASIM_CLIENT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+# Install headers
+install(FILES ${headers} DESTINATION ${COPPELIASIM_CLIENT_INC_INSTALL_DIR})
 
 
-# Add source to this project's executable.
-add_executable (launch-coppeliasim-cpp-client "coppeliasim-cpp-client.cpp")
+install(EXPORT ${CMAKE_PROJECT_NAME}Targets DESTINATION ${COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR}
+    FILE ${CMAKE_PROJECT_NAME}-config.cmake
+)
 
-# Define preprocessor definitions
-target_compile_definitions(coppeliasim-cpp-client PRIVATE NON_MATLAB_PARSING MAX_EXT_API_CONNECTIONS=255 DO_NOT_USE_SHARED_MEMORY)
-
-# Link against the CoppeliaSim API library
-target_link_libraries(launch-coppeliasim-cpp-client PRIVATE coppeliasim-cpp-client)
-
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET launch-coppeliasim-cpp-client PROPERTY CXX_STANDARD 20)
-endif()
+# Add executable project
+set(EXE_PROJECT ${CMAKE_PROJECT_NAME}-exe)
+add_executable(${EXE_PROJECT} "coppeliasim-cpp-client.cpp")
+#target_include_directories(${EXE_PROJECT} PRIVATE include)
+target_link_libraries(${EXE_PROJECT} PRIVATE ${CMAKE_PROJECT_NAME})
