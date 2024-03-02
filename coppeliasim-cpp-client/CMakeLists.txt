@@ -47,13 +47,15 @@ set(sources
 )
 
 # Set headers
-set(headers
+set(client_headers
 	include/client.h
-
+)
+set(api_headers
     lib/extApi.h
     lib/extApiPlatform.h
 	lib/extApiInternal.h
-
+)
+set(simLib_headers
     lib/simLib/luaFunctionData.h
 	lib/simLib/luaFunctionDataItem.h
 	lib/simLib/scriptFunctionData.h
@@ -72,7 +74,9 @@ set(headers
 
 add_library(coppeliasim-cpp-client
 	${sources}
-	${headers}
+	${client_headers}
+	${api_headers}
+    ${simLib_headers}
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC 
@@ -113,7 +117,10 @@ write_basic_package_version_file(${version_file}
 )
 
 # Install headers
-install(FILES ${headers} DESTINATION ${COPPELIASIM_CLIENT_INC_INSTALL_DIR})
+install(FILES ${client_headers} DESTINATION ${COPPELIASIM_CLIENT_INC_INSTALL_DIR})
+install(FILES ${api_headers} DESTINATION ${COPPELIASIM_CLIENT_INC_INSTALL_DIR})
+install(FILES ${simLib_headers} DESTINATION ${COPPELIASIM_CLIENT_INC_INSTALL_DIR}/simLib)
+
 
 
 install(EXPORT ${CMAKE_PROJECT_NAME}Targets DESTINATION ${COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR}
