@@ -1,8 +1,8 @@
 
 #pragma once
 
-#define LOG_ON_COPPELIA true
-#define LOG_ON_CMD true
+#define LOG_ON_COPPELIA false
+#define LOG_ON_CMD false
 
 #include <iostream>
 #include <windows.h>
@@ -34,12 +34,14 @@ public:
 	void stopSimulation();
 
 	void setIntegerSignal(const std::string& signalName, const int& signalValue);
+	void setFloatSignal(const std::string& signalName, const double& signalValue);
 	void setStringSignal(const std::string& signalName, const std::string& signalValue);
 
 	int getIntegerSignal(const std::string& signalName);
+	double getFloatSignal(const std::string& signalName);
 	std::string getStringSignal(const std::string& signalName);
 
-	void log(const std::string& message);
+	void log_msg(const std::string& message) const;
 	
 	~CoppeliaSimClient();
 };

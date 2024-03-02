@@ -1,5 +1,7 @@
 ﻿
-#include "client.h"
+
+#include "coppeliasim-cpp-client.h"
+
 
 int main()
 {
@@ -7,7 +9,7 @@ int main()
 
 	if (client.initialize())
 	{
-		client.log("You can log info to the Command line and CoppeliaSim!");
+		client.log_msg("You can log info to the Command line and CoppeliaSim!");
 		client.stopSimulation();
 	}
 	else
