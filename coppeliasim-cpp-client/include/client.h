@@ -7,6 +7,7 @@
 #include <iostream>
 #include <windows.h>
 #include <string>
+#include <algorithm> 
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_DEPRECATE
@@ -18,30 +19,42 @@ extern "C"
 #include "extApiPlatform.h"
 }
 
-class CoppeliaSimClient
+namespace coppeliasim_cpp
 {
-private:
-	int clientID;
-	simxChar* connectionAddress;
-	simxInt connectionPort;
-public:
-	CoppeliaSimClient(const std::string& connectionAddress = "127.0.0.1", const int& connectionPort = 19999);
-	bool initialize();
+	enum class LogMode
+	{
+		NO_LOGS = 0,
+		LOG_CMD,
+		LOG_COPPELIA,
+		LOG_COPPELIA_CMD
+	};
 
-	int getClientID();
-	
-	void startSimulation();
-	void stopSimulation();
+	class CoppeliaSimClient
+	{
+	private:
+		int clientID;
+		simxInt connectionPort;
+		LogMode logMode;
+		std::unique_ptr<simxChar[]> connectionAddress;
+	public:
+		CoppeliaSimClient(const std::string& connectionAddress = "127.0.0.1", 
+			int connectionPort = 19999, 
+			LogMode logMode = LogMode::LOG_COPPELIA_CMD);
 
-	void setIntegerSignal(const std::string& signalName, const int& signalValue);
-	void setFloatSignal(const std::string& signalName, const double& signalValue);
-	void setStringSignal(const std::string& signalName, const std::string& signalValue);
+		bool initialize();
+		int getClientID() const;
+		void startSimulation() const;
+		void stopSimulation() const;
+		void setLogMode(LogMode logMode);
+		void setIntegerSignal(const std::string& signalName, int signalValue) const;
+		void setFloatSignal(const std::string& signalName, const float& signalValue) const;
+		void setStringSignal(const std::string& signalName, const std::string& signalValue) const;
+		int getIntegerSignal(const std::string& signalName) const;
+		float getFloatSignal(const std::string& signalName) const;
+		std::string getStringSignal(const std::string& signalName) const;
+		void log_msg(const std::string& message) const;
 
-	int getIntegerSignal(const std::string& signalName);
-	double getFloatSignal(const std::string& signalName);
-	std::string getStringSignal(const std::string& signalName);
+		~CoppeliaSimClient();
+	};
+}
 
-	void log_msg(const std::string& message) const;
-	
-	~CoppeliaSimClient();
-};

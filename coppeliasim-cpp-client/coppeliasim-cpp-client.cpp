@@ -1,11 +1,9 @@
-﻿
-
-#include "coppeliasim-cpp-client.h"
+﻿#include "coppeliasim-cpp-client.h"
 
 
 int main()
 {
-	CoppeliaSimClient client;
+	coppeliasim_cpp::CoppeliaSimClient client;
 
 	if (client.initialize())
 	{
