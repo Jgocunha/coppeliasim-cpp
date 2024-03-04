@@ -8,7 +8,12 @@ int main()
 	if (client.initialize())
 	{
 		client.log_msg("You can log info to the Command line and CoppeliaSim!");
-		client.stopSimulation();
+
+		while(client.isConnected())
+		{
+			// Do something
+			Sleep(100);
+		}
 	}
 	else
 	{

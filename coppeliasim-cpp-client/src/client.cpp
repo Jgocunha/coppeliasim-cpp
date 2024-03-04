@@ -1,4 +1,7 @@
 #include "client.h"
+#include "client.h"
+#include "client.h"
+#include "client.h"
 
 namespace coppeliasim_cpp
 {
@@ -18,12 +21,23 @@ namespace coppeliasim_cpp
 
 		if (clientID == -1)
 		{
-			std::cout << "Failed to connect to CoppeliaSim." << std::endl;
+			std::cout << "Failed to connect to CoppeliaSim.\n";
 			return false;
 		}
 
 		log_msg("Connected to CoppeliaSim successfully!");
 
+		return true;
+	}
+
+	bool CoppeliaSimClient::isConnected() const
+	{
+		const int connectionState = simxGetConnectionId(clientID);
+		if (connectionState == -1)
+		{
+			std::cout << "Connection to CoppeliaSim lost.\n";
+			return false;
+		}
 		return true;
 	}
 
@@ -44,9 +58,9 @@ namespace coppeliasim_cpp
 		log_msg("Simulation stopped.");
 	}
 
-	void CoppeliaSimClient::setLogMode(LogMode logMode)
+	void CoppeliaSimClient::setLogMode(LogMode mode)
 	{
-		this->logMode = logMode;
+		logMode = mode;
 	}
 
 	void CoppeliaSimClient::setIntegerSignal(const std::string& signalName, int signalValue) const
@@ -120,6 +134,7 @@ namespace coppeliasim_cpp
 			break;
 		}
 	}
+
 	CoppeliaSimClient::~CoppeliaSimClient()
 	{
 		simxFinish(clientID);
