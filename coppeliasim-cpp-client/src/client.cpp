@@ -1,7 +1,4 @@
 #include "client.h"
-#include "client.h"
-#include "client.h"
-#include "client.h"
 
 namespace coppeliasim_cpp
 {
@@ -87,7 +84,6 @@ namespace coppeliasim_cpp
 	{
 		simxInt signalValue;
 		simxGetIntegerSignal(clientID, signalName.c_str(), &signalValue, simx_opmode_blocking);
-		//setIntegerSignal(signalName.c_str(), 0);
 		log_msg("Signal: " + signalName + " read as: " + std::to_string(signalValue));
 		return signalValue;
 	}
@@ -96,18 +92,45 @@ namespace coppeliasim_cpp
 	{
 		simxInt signalLength;
 		simxUChar* signalValue;
-		simxGetAndClearStringSignal(clientID, signalName.c_str(), &signalValue, &signalLength, simx_opmode_blocking);
+		simxGetStringSignal(clientID, signalName.c_str(), &signalValue, &signalLength, simx_opmode_blocking);
 
 		std::string internalSignalValue = std::string(reinterpret_cast<char*>(signalValue), signalLength);
 		log_msg("Signal: " + signalName + " read as: " + internalSignalValue);
 		return internalSignalValue;
 	}
 
+	int CoppeliaSimClient::getObjectHandle(const std::string& objectName) const
+	{
+		simxInt objectHandle;
+		simxGetObjectHandle(clientID, objectName.c_str(), &objectHandle, simx_opmode_blocking);
+		return objectHandle;
+	}
+
+	Pose CoppeliaSimClient::getObjectPose(int objectHandle) const
+	{
+		const Position position = getObjectPosition(objectHandle);
+		const Orientation orientation = getObjectOrientation(objectHandle);
+		return { position, orientation };
+	}
+
+	Position CoppeliaSimClient::getObjectPosition(int objectHandle) const
+	{
+		simxFloat position[3];
+		simxGetObjectPosition(clientID, objectHandle, -1, position, simx_opmode_blocking);
+		return { position[0], position[1], position[2] };
+	}
+
+	Orientation CoppeliaSimClient::getObjectOrientation(int objectHandle) const
+	{
+		simxFloat orientation[3];
+		simxGetObjectOrientation(clientID, objectHandle, -1, orientation, simx_opmode_blocking);
+		return { orientation[0], orientation[1], orientation[2] };
+	}
+
 	float CoppeliaSimClient::getFloatSignal(const std::string& signalName) const
 	{
 		simxFloat signalValue;
 		simxGetFloatSignal(clientID, signalName.c_str(), &signalValue, simx_opmode_blocking);
-		//setIntegerSignal(signalName.c_str(), 0);
 		log_msg("Signal: " + signalName + " read as: " + std::to_string(signalValue));
 		return signalValue;
 	}
