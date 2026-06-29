@@ -29,6 +29,19 @@ set(COPPELIASIM_CLIENT_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sha
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Emit compile_commands.json for clang-tidy / run-clang-tidy.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Optional AddressSanitizer + UndefinedBehaviorSanitizer build (Clang/GCC only).
+# Applied directory-wide so the whole binary is instrumented (required for
+# reliable ASan); the vendored code's UB paths are compiled out via
+# DO_NOT_USE_SHARED_MEMORY. OFF by default so the normal matrix is unaffected.
+option(ENABLE_SANITIZERS "Build with AddressSanitizer + UBSan (Clang/GCC)" OFF)
+if(ENABLE_SANITIZERS)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
 # Set sources
 set(sources
     src/client.cpp
