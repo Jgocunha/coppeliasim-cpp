@@ -89,15 +89,15 @@ namespace coppeliasim_cpp
 		[[nodiscard]] int getClientID() const;
 
 		// Commands return true on success, false if the API call did not complete.
-		bool startSimulation() const;
-		bool stopSimulation() const;
-		bool pauseSimulation() const;
+		[[nodiscard]] bool startSimulation() const;
+		[[nodiscard]] bool stopSimulation() const;
+		[[nodiscard]] bool pauseSimulation() const;
 
 		[[nodiscard]] std::optional<int> getPingTime() const;
 
-		bool setIntegerSignal(const std::string& signalName, int signalValue) const;
-		bool setFloatSignal(const std::string& signalName, float signalValue) const;
-		bool setStringSignal(const std::string& signalName, const std::string& signalValue) const;
+		[[nodiscard]] bool setIntegerSignal(const std::string& signalName, int signalValue) const;
+		[[nodiscard]] bool setFloatSignal(const std::string& signalName, float signalValue) const;
+		[[nodiscard]] bool setStringSignal(const std::string& signalName, const std::string& signalValue) const;
 
 		// Queries return nullopt if the API call failed; the value is never
 		// fabricated from an unwritten out-parameter.
@@ -111,8 +111,8 @@ namespace coppeliasim_cpp
 		[[nodiscard]] std::optional<Orientation> getObjectOrientation(int objectHandle) const;
 		[[nodiscard]] std::optional<Velocity> getObjectVelocity(int objectHandle) const;
 
-		bool setObjectPosition(int objectHandle, const Position& position) const;
-		bool setObjectOrientation(int objectHandle, const Orientation& orientation) const;
+		[[nodiscard]] bool setObjectPosition(int objectHandle, const Position& position) const;
+		[[nodiscard]] bool setObjectOrientation(int objectHandle, const Orientation& orientation) const;
 
 		// Returns the child at childIndex, or nullopt if the call failed or there is
 		// no such child (the API returns a handle of -1 past the last child).
@@ -121,12 +121,12 @@ namespace coppeliasim_cpp
 
 		// Joint control.
 		[[nodiscard]] std::optional<float> getJointPosition(int jointHandle) const;
-		bool setJointTargetPosition(int jointHandle, float targetPosition) const;
-		bool setJointTargetVelocity(int jointHandle, float targetVelocity) const;
+		[[nodiscard]] bool setJointTargetPosition(int jointHandle, float targetPosition) const;
+		[[nodiscard]] bool setJointTargetVelocity(int jointHandle, float targetVelocity) const;
 
 		// Scene management. loadScene's path is resolved on the server (CoppeliaSim) side.
-		bool loadScene(const std::string& scenePathAndName) const;
-		bool closeScene() const;
+		[[nodiscard]] bool loadScene(const std::string& scenePathAndName) const;
+		[[nodiscard]] bool closeScene() const;
 
 		void setLogMode(LogMode mode);
 		void logMsg(const std::string& message) const;

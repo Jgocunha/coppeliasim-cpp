@@ -64,7 +64,7 @@ if (const auto handle = client->getObjectHandle("Cuboid"))
     }
 }
 
-client->setIntegerSignal("speed", 42);          // -> bool
+const bool ok = client->setIntegerSignal("speed", 42);   // commands return bool
 const std::optional<int> v = client->getIntegerSignal("speed");
 ```
 
