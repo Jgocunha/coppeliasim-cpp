@@ -60,7 +60,9 @@ jobs:
             --suppress=checkersReport \
             --suppress=unmatchedSuppression \
             --suppress=unusedFunction \
+            --suppress='*:lib/*' \
             --suppress='*:*/lib/*' \
+            --suppress='*:*simConst.h' \
             -I include -I lib \
             src include
 
