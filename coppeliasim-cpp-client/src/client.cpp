@@ -1,13 +1,14 @@
 #include "client.h"
 
+#include <array>
 #include <cstring>
 
 namespace coppeliasim_cpp
 {
 
 	CoppeliaSimClient::CoppeliaSimClient(const std::string& address, const int port, LogMode mode)
-		: clientID(-1), connectionPort(port), logMode(mode),
-		connectionAddress(std::make_unique<simxChar[]>(address.length() + 1))
+		: connectionPort(port), logMode(mode),
+		connectionAddress(std::make_unique<simxChar[]>(address.length() + 1)) // NOLINT(modernize-avoid-c-arrays) -- C string buffer for the C API.
 	{
 		// Use std::ranges::copy to copy the string to the allocated array
 		std::ranges::copy(address, connectionAddress.get());
@@ -16,7 +17,12 @@ namespace coppeliasim_cpp
 
 	bool CoppeliaSimClient::initialize()
 	{
-		clientID = simxStart(connectionAddress.get(), connectionPort, true, true, 2000, 5);
+		constexpr simxUChar waitUntilConnected = 1;
+		constexpr simxUChar doNotReconnectOnceDisconnected = 1;
+		constexpr simxInt timeoutInMs = 2000;
+		constexpr simxInt commThreadCycleInMs = 5;
+		clientID = simxStart(connectionAddress.get(), connectionPort,
+			waitUntilConnected, doNotReconnectOnceDisconnected, timeoutInMs, commThreadCycleInMs);
 
 		if (clientID == -1)
 		{
@@ -31,6 +37,12 @@ namespace coppeliasim_cpp
 
 	bool CoppeliaSimClient::isConnected() const
 	{
+		// A negative handle is never connected; calling the C API with it would
+		// index its connection arrays out of bounds.
+		if (clientID < 0)
+		{
+			return false;
+		}
 		const int connectionState = simxGetConnectionId(clientID);
 		if (connectionState == -1)
 		{
@@ -70,7 +82,7 @@ namespace coppeliasim_cpp
 
 	void CoppeliaSimClient::setStringSignal(const std::string& signalName, const std::string& signalValue) const
 	{
-		const auto signalData = reinterpret_cast<const simxUChar*>(signalValue.c_str());
+		const auto *const signalData = reinterpret_cast<const simxUChar*>(signalValue.c_str());
 		const auto signalLength = static_cast<simxInt>(strlen(signalValue.c_str()));
 		simxSetStringSignal(clientID, signalName.c_str(), signalData, signalLength, simx_opmode_blocking);
 		log_msg("Signal: " + signalName + " set to: " + signalValue);
@@ -117,15 +129,15 @@ namespace coppeliasim_cpp
 
 	Position CoppeliaSimClient::getObjectPosition(int objectHandle) const
 	{
-		simxFloat position[3];
-		simxGetObjectPosition(clientID, objectHandle, -1, position, simx_opmode_blocking);
+		std::array<simxFloat, 3> position{};
+		simxGetObjectPosition(clientID, objectHandle, -1, position.data(), simx_opmode_blocking);
 		return { position[0], position[1], position[2] };
 	}
 
 	Orientation CoppeliaSimClient::getObjectOrientation(int objectHandle) const
 	{
-		simxFloat orientation[3];
-		simxGetObjectOrientation(clientID, objectHandle, -1, orientation, simx_opmode_blocking);
+		std::array<simxFloat, 3> orientation{};
+		simxGetObjectOrientation(clientID, objectHandle, -1, orientation.data(), simx_opmode_blocking);
 		return { orientation[0], orientation[1], orientation[2] };
 	}
 
@@ -146,12 +158,16 @@ namespace coppeliasim_cpp
 			break;
 		case LogMode::LOG_COPPELIA:
 			if (clientID != -1)  // Ensure we're connected before trying to log to CoppeliaSim
+			{
 				simxAddStatusbarMessage(clientID, message.c_str(), simx_opmode_oneshot);
+			}
 			break;
 		case LogMode::LOG_COPPELIA_CMD:
 			std::cout << message << std::endl;
 			if (clientID != -1)  // Ensure we're connected before trying to log to CoppeliaSim
+			{
 				simxAddStatusbarMessage(clientID, message.c_str(), simx_opmode_oneshot);
+			}
 			break;
 		case LogMode::NO_LOGS:
 		default:

@@ -1,0 +1,21 @@
+# Static analysis for the library's own code (src/ + include/) only.
+# The vendored CoppeliaSim remote API under lib/ is third-party C and is
+# excluded via HeaderFilterRegex; the disabled checks below are the ones that
+# fire only on unavoidable C-API interop (out-param init, reinterpret_cast to
+# simxUChar*, simxFloat[3] arrays, the API's ports/magic numbers).
+---
+Checks: >
+  bugprone-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  readability-*,
+  -cppcoreguidelines-init-variables,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/(src|include)/.*'
+FormatStyle: none

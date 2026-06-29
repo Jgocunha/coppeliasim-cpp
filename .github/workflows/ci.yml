@@ -31,3 +31,58 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --build-config ${{ matrix.build_type }} --output-on-failure --no-tests=ignore --timeout 60
+
+  static-analysis:
+    name: Static analysis (clang-tidy + cppcheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: coppeliasim-cpp-client
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy cppcheck
+
+      - name: Configure (compile DB)
+        run: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      # Analyse only the library's own code; vendored lib/ is excluded here and
+      # via HeaderFilterRegex in .clang-tidy.
+      - name: clang-tidy
+        run: run-clang-tidy -p build "$(pwd)/src" "$(pwd)/include"
+
+      - name: cppcheck
+        run: |
+          cppcheck --enable=all --error-exitcode=1 \
+            --inline-suppr \
+            --suppress=missingIncludeSystem \
+            --suppress=checkersReport \
+            --suppress=unmatchedSuppression \
+            --suppress=unusedFunction \
+            --suppress='*:lib/*' \
+            --suppress='*:*/lib/*' \
+            --suppress='*:*simConst.h' \
+            -I include -I lib \
+            src include
+
+  sanitizers:
+    name: Sanitizers (ASan + UBSan)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: coppeliasim-cpp-client
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (sanitizers)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test under ASan/UBSan
+        env:
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          ASAN_OPTIONS: detect_leaks=1
+        run: ctest --test-dir build --output-on-failure --timeout 120
