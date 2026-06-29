@@ -16,9 +16,9 @@ TEST(PositionTest, DefaultConstructorZeroesFields)
 	EXPECT_FLOAT_EQ(p.z, 0.0f);
 }
 
-TEST(PositionTest, ValueConstructorStoresFields)
+TEST(PositionTest, AggregateInitStoresFields)
 {
-	Position p(1.5f, -2.0f, 3.25f);
+	Position p{1.5f, -2.0f, 3.25f};
 	EXPECT_FLOAT_EQ(p.x, 1.5f);
 	EXPECT_FLOAT_EQ(p.y, -2.0f);
 	EXPECT_FLOAT_EQ(p.z, 3.25f);
@@ -32,9 +32,9 @@ TEST(OrientationTest, DefaultConstructorZeroesFields)
 	EXPECT_FLOAT_EQ(o.gamma, 0.0f);
 }
 
-TEST(OrientationTest, ValueConstructorStoresFields)
+TEST(OrientationTest, AggregateInitStoresFields)
 {
-	Orientation o(0.1f, 0.2f, 0.3f);
+	Orientation o{0.1f, 0.2f, 0.3f};
 	EXPECT_FLOAT_EQ(o.alpha, 0.1f);
 	EXPECT_FLOAT_EQ(o.beta, 0.2f);
 	EXPECT_FLOAT_EQ(o.gamma, 0.3f);
@@ -53,9 +53,7 @@ TEST(PoseTest, DefaultConstructorZeroesBothMembers)
 
 TEST(PoseTest, ComposesPositionAndOrientation)
 {
-	Position p(1.0f, 2.0f, 3.0f);
-	Orientation o(4.0f, 5.0f, 6.0f);
-	Pose pose(p, o);
+	Pose pose{Position{1.0f, 2.0f, 3.0f}, Orientation{4.0f, 5.0f, 6.0f}};
 	EXPECT_FLOAT_EQ(pose.position.x, 1.0f);
 	EXPECT_FLOAT_EQ(pose.position.z, 3.0f);
 	EXPECT_FLOAT_EQ(pose.orientation.alpha, 4.0f);

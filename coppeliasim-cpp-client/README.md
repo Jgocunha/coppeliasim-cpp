@@ -22,64 +22,75 @@ To use the CoppeliaSim C++ Client, you need to follow these steps:
 
 ## Usage
 
-To use the CoppeliaSim C++ Client in your project, follow these steps:
+### 1. Connect
 
-2. Create an instance of the CoppeliaSimClient class:
+Use the `connect()` factory. It establishes the connection and returns a
+`std::optional<CoppeliaSimClient>` — `std::nullopt` if the connection failed, so a
+returned client is always connected:
 
-   ```cpp
-   #include "coppeliasim-cpp-client.h"
+```cpp
+#include "coppeliasim-cpp-client.h"
 
-   int main()
-   {
-       CoppeliaSimClient client;
-
-       // ... rest of the code ...
-   }
-   ```
-
-3. Initialize the client:
-   
-   ```cpp
-   if (client.initialize())
+int main()
+{
+    auto client = coppeliasim_cpp::CoppeliaSimClient::connect(
+        "127.0.0.1", 19999, coppeliasim_cpp::LogMode::LOG_CMD);
+    if (!client)
     {
-        // Initialization successful
+        std::cerr << "Failed to connect to CoppeliaSim.\n";
+        return 1;
     }
-    else
+
+    // use *client / client-> ...
+}
+```
+
+(If you need to construct first and connect later, the constructor plus
+`[[nodiscard]] bool initialize()` are still available, but `connect()` is preferred.)
+
+### 2. Call methods
+
+Commands return `bool` (success); queries return `std::optional<T>` (`std::nullopt`
+on failure) — so failures are reported rather than returning fabricated values:
+
+```cpp
+if (!client->startSimulation()) { /* handle failure */ }
+
+if (const auto handle = client->getObjectHandle("Cuboid"))
+{
+    if (const auto pose = client->getObjectPose(*handle))
     {
-        // Initialization failed
+        // use pose->position, pose->orientation
     }
-    ```
+}
 
-Initialize the client by calling the initialize() method. The initialize() method establishes a connection with CoppeliaSim. It returns true if the connection is successful and false otherwise.
+const bool ok = client->setIntegerSignal("speed", 42);   // commands return bool
+const std::optional<int> v = client->getIntegerSignal("speed");
+```
 
-## Usage
+Available methods include simulation control (`startSimulation`, `stopSimulation`,
+`pauseSimulation`), signals (`set/getIntegerSignal`, `set/getFloatSignal`,
+`set/getStringSignal`), object queries and setters (`getObjectHandle`,
+`getObjectPose/Position/Orientation/Velocity`, `setObjectPosition/Orientation`,
+`getObjectChild/Children`), joint control (`getJointPosition`,
+`setJointTargetPosition/Velocity`), scene management (`loadScene`, `closeScene`),
+connection health (`isConnected`, `getPingTime`), and logging (`logMsg`).
 
-4. Use the available methods
+### 3. Clean up
 
-Use the available methods of the CoppeliaSimClient class to control CoppeliaSim and exchange data. The available methods include:
-
-- `startSimulation()`: Starts the simulation in CoppeliaSim.
-- `stopSimulation()`: Stops the simulation in CoppeliaSim.
-- `setIntegerSignal(const std::string& signalName, const int& signalValue)`: Sets an integer signal in CoppeliaSim with the specified name and value.
-- `setStringSignal(const std::string& signalName, const std::string& signalValue)`: Sets a string signal in CoppeliaSim with the specified name and value.
-- `getIntegerSignal(const std::string& signalName)`: Retrieves the value of an integer signal from CoppeliaSim with the specified name.
-- `getStringSignal(const std::string& signalName)`: Retrieves the value of a string signal from CoppeliaSim with the specified name.
-- `log(const std::string& message)`: Logs a message to the console and/or CoppeliaSim's status bar, depending on the logging settings.
-
-Ensure to handle the return values of these methods and perform appropriate error checking.
-
-5. Clean up resources
-
-Clean up resources by destroying the CoppeliaSimClient instance. The destructor is automatically called at the end of the program.
+Cleanup is automatic — the destructor releases the connection (`simxFinish`). The
+client is movable but not copyable.
 
 ### Logging
 
-The CoppeliaSim C++ Client provides a logging mechanism to output messages. You can control where the messages are logged by adjusting the preprocessor definitions in the client.h file:
+The CoppeliaSim C++ Client provides a logging mechanism to output messages. You control where messages go by passing a `LogMode` to the constructor (or `connect`); the default is `LogMode::NO_LOGS`:
 
-- `LOG_ON_CMD`: Set to true to log messages to the console.
-- `LOG_ON_COPPELIA`: Set to true to log messages to CoppeliaSim's status bar.
+- `LogMode::NO_LOGS`: no logging (default).
+- `LogMode::LOG_CMD`: log messages to the console.
+- `LogMode::LOG_COPPELIA`: log messages to CoppeliaSim's status bar.
+- `LogMode::LOG_COPPELIA_CMD`: log to both.
 
-Adjust these definitions according to your logging preferences.
+You can change it at runtime with `setLogMode(LogMode)`.
 
 ## Contributing
 

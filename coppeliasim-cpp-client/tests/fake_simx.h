@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 extern "C"
 {
@@ -33,16 +34,26 @@ namespace fake_simx
 		int lastStringLength = 0;
 		int lastObjectHandle = -999;
 		int lastOpMode = -999;
+		float lastVec3[3] = {0, 0, 0}; // forwarded 3-float payload (set position/orientation)
+		int lastChildIndex = -999;
 
 		// --- programmable behaviour (what the next/all calls return) ---
 		int startReturn = 0;          // value simxStart returns (clientID, or -1)
 		int connectionId = 0;         // value simxGetConnectionId returns
+		int returnCode = simx_return_ok; // rc returned by every simx* command/query below
 		int nextIntSignal = 0;        // out-value for simxGetIntegerSignal
 		float nextFloatSignal = 0.0f; // out-value for simxGetFloatSignal
 		std::string nextStringSignal; // out-bytes for simxGetStringSignal
 		int nextHandle = 0;           // out-value for simxGetObjectHandle
 		float nextPosition[3] = {0, 0, 0};
 		float nextOrientation[3] = {0, 0, 0};
+		int nextPingTime = 0;         // out-value for simxGetPingTime
+		float nextLinearVelocity[3] = {0, 0, 0};
+		float nextAngularVelocity[3] = {0, 0, 0};
+		int nextChildHandle = -1;     // out-value for simxGetObjectChild when the
+		                              // sequence below is empty (-1 = no child)
+		std::vector<int> childHandleSequence; // simxGetObjectChild returns these by childIndex
+		float nextJointPosition = 0.0f;
 	};
 
 	// Single global instance the fake reads/writes and tests inspect.

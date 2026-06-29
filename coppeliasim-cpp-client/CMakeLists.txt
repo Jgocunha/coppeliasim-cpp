@@ -22,8 +22,8 @@ set(COPPELIASIM_CLIENT_RUNTIME_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
 set(COPPELIASIM_CLIENT_LIBRARY_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${COPPELIASIM_CLIENT_LIB_PREFIX}")
 set(COPPELIASIM_CLIENT_ARCHIVE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib/${COPPELIASIM_CLIENT_LIB_PREFIX}")
 set(COPPELIASIM_CLIENT_FRAMEWORK_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
-set(COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}")
-set(COPPELIASIM_CLIENT_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/${CMAKE_PROJECT_NAME}")
+set(COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}")
+set(COPPELIASIM_CLIENT_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}")
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -31,6 +31,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Emit compile_commands.json for clang-tidy / run-clang-tidy.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Let consumers build just the library if they want.
+option(BUILD_EXAMPLES "Build the demo executable" ON)
+include(CTest)  # defines the standard BUILD_TESTING option (default ON)
 
 # Optional AddressSanitizer + UndefinedBehaviorSanitizer build (Clang/GCC only).
 # Applied directory-wide so the whole binary is instrumented (required for
@@ -94,7 +98,7 @@ add_library(coppeliasim-cpp-client
     ${simLib_headers}
 )
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC 
+target_include_directories(${PROJECT_NAME} PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}> 
@@ -103,7 +107,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
 
-target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC
+target_compile_definitions(${PROJECT_NAME} PUBLIC
     COPPELIASIM_CLIENT=1
     COPPELIASIM_CLIENT_VERSION_MAJOR=${COPPELIASIM_CLIENT_VERSION_MAJOR}
     COPPELIASIM_CLIENT_VERSION_MINOR=${COPPELIASIM_CLIENT_VERSION_MINOR}
@@ -112,12 +116,12 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC
     DO_NOT_USE_SHARED_MEMORY
 )
 
-set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES
-    OUTPUT_NAME "${CMAKE_PROJECT_NAME}-${COPPELIASIM_CLIENT_VERSION}"
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    OUTPUT_NAME "${PROJECT_NAME}-${COPPELIASIM_CLIENT_VERSION}"
     POSITION_INDEPENDENT_CODE ON
 )
 
-install(TARGETS ${CMAKE_PROJECT_NAME} EXPORT ${CMAKE_PROJECT_NAME}Targets
+install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
     RUNTIME       DESTINATION ${COPPELIASIM_CLIENT_RUNTIME_INSTALL_DIR}
     LIBRARY       DESTINATION ${COPPELIASIM_CLIENT_LIBRARY_INSTALL_DIR}
     ARCHIVE       DESTINATION ${COPPELIASIM_CLIENT_ARCHIVE_INSTALL_DIR}
@@ -125,7 +129,7 @@ install(TARGETS ${CMAKE_PROJECT_NAME} EXPORT ${CMAKE_PROJECT_NAME}Targets
 )
 
 include(CMakePackageConfigHelpers)
-set(version_file "${CMAKE_CURRENT_BINARY_DIR}/cmake/${CMAKE_PROJECT_NAME}-config-version.cmake")
+set(version_file "${CMAKE_CURRENT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake")
 write_basic_package_version_file(${version_file}
     VERSION ${COPPELIASIM_CLIENT_VERSION}
     COMPATIBILITY AnyNewerVersion
@@ -138,15 +142,18 @@ install(FILES ${simLib_headers} DESTINATION ${COPPELIASIM_CLIENT_INC_INSTALL_DIR
 
 
 
-install(EXPORT ${CMAKE_PROJECT_NAME}Targets DESTINATION ${COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR}
-    FILE ${CMAKE_PROJECT_NAME}-config.cmake
+install(EXPORT ${PROJECT_NAME}Targets DESTINATION ${COPPELIASIM_CLIENT_CMAKE_CONFIG_INSTALL_DIR}
+    FILE ${PROJECT_NAME}-config.cmake
 )
 
 # Add executable project
-set(EXE_PROJECT ${CMAKE_PROJECT_NAME}-exe)
-add_executable(${EXE_PROJECT} "coppeliasim-cpp-client.cpp")
-#target_include_directories(${EXE_PROJECT} PRIVATE include)
-target_link_libraries(${EXE_PROJECT} PRIVATE ${CMAKE_PROJECT_NAME})
+if(BUILD_EXAMPLES)
+    set(EXE_PROJECT ${PROJECT_NAME}-exe)
+    add_executable(${EXE_PROJECT} "coppeliasim-cpp-client.cpp")
+    target_link_libraries(${EXE_PROJECT} PRIVATE ${PROJECT_NAME})
+endif()
 
 # Test suite
-add_subdirectory(tests)
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
