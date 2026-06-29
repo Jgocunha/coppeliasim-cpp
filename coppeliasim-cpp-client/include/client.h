@@ -5,7 +5,9 @@
 #define LOG_ON_CMD false
 
 #include <iostream>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include <string>
 #include <algorithm> 
 
