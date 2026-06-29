@@ -5,9 +5,12 @@
 #define LOG_ON_CMD false
 
 #include <iostream>
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include <string>
-#include <algorithm> 
+#include <algorithm>
+#include <memory>
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_DEPRECATE

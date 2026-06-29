@@ -1,5 +1,8 @@
 ﻿#include "coppeliasim-cpp-client.h"
 
+#include <thread>
+#include <chrono>
+
 
 int main()
 {
@@ -25,7 +28,7 @@ int main()
 			const coppeliasim_cpp::Orientation obj_ori = client.getObjectOrientation(obj_handle);
 			std::cout << "Object orientation: " << obj_ori.alpha << ", " << obj_ori.beta << ", " << obj_ori.gamma << std::endl;
 			
-			Sleep(100);
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 	}
 	else

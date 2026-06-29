@@ -5,6 +5,8 @@ project(coppeliasim-cpp-client
     #LANGUAGES CXX
 )
 
+enable_testing()
+
 # Define library version
 set(COPPELIASIM_CLIENT_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
 set(COPPELIASIM_CLIENT_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
