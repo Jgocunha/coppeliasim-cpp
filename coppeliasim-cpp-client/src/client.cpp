@@ -1,5 +1,7 @@
 #include "client.h"
 
+#include <cstring>
+
 namespace coppeliasim_cpp
 {
 
