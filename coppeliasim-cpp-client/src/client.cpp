@@ -87,7 +87,7 @@ namespace coppeliasim_cpp
 		const int connectionState = simxGetConnectionId(clientID);
 		if (connectionState == -1)
 		{
-			std::cout << "Connection to CoppeliaSim lost.\n";
+			logMsg("Connection to CoppeliaSim lost.");
 			return false;
 		}
 		return true;
@@ -118,6 +118,28 @@ namespace coppeliasim_cpp
 		}
 		logMsg("Simulation stopped.");
 		return true;
+	}
+
+	bool CoppeliaSimClient::pauseSimulation() const
+	{
+		const simxInt rc = simxPauseSimulation(clientID, simx_opmode_blocking);
+		if (rc != simx_return_ok)
+		{
+			return false;
+		}
+		logMsg("Simulation paused.");
+		return true;
+	}
+
+	std::optional<int> CoppeliaSimClient::getPingTime() const
+	{
+		simxInt pingTime = 0;
+		const simxInt rc = simxGetPingTime(clientID, &pingTime);
+		if (rc != simx_return_ok)
+		{
+			return std::nullopt;
+		}
+		return pingTime;
 	}
 
 	void CoppeliaSimClient::setLogMode(LogMode mode)
@@ -242,6 +264,101 @@ namespace coppeliasim_cpp
 			return std::nullopt;
 		}
 		return Orientation{orientation[0], orientation[1], orientation[2]};
+	}
+
+	std::optional<Velocity> CoppeliaSimClient::getObjectVelocity(int objectHandle) const
+	{
+		std::array<simxFloat, 3> linear{};
+		std::array<simxFloat, 3> angular{};
+		const simxInt rc = simxGetObjectVelocity(clientID, objectHandle,
+			linear.data(), angular.data(), simx_opmode_blocking);
+		if (rc != simx_return_ok)
+		{
+			return std::nullopt;
+		}
+		return Velocity{
+			Position{linear[0], linear[1], linear[2]},
+			Orientation{angular[0], angular[1], angular[2]}};
+	}
+
+	bool CoppeliaSimClient::setObjectPosition(int objectHandle, const Position& position) const
+	{
+		const std::array<simxFloat, 3> values{position.x, position.y, position.z};
+		const simxInt rc = simxSetObjectPosition(clientID, objectHandle, kWorldFrame,
+			values.data(), simx_opmode_oneshot);
+		return rc == simx_return_ok;
+	}
+
+	bool CoppeliaSimClient::setObjectOrientation(int objectHandle, const Orientation& orientation) const
+	{
+		const std::array<simxFloat, 3> values{orientation.alpha, orientation.beta, orientation.gamma};
+		const simxInt rc = simxSetObjectOrientation(clientID, objectHandle, kWorldFrame,
+			values.data(), simx_opmode_oneshot);
+		return rc == simx_return_ok;
+	}
+
+	std::optional<int> CoppeliaSimClient::getObjectChild(int parentHandle, int childIndex) const
+	{
+		simxInt childHandle = -1;
+		const simxInt rc = simxGetObjectChild(clientID, parentHandle, childIndex,
+			&childHandle, simx_opmode_blocking);
+		if (rc != simx_return_ok || childHandle == -1)
+		{
+			// rc failure or "no child at this index" both yield nullopt.
+			return std::nullopt;
+		}
+		return childHandle;
+	}
+
+	std::vector<int> CoppeliaSimClient::getObjectChildren(int parentHandle) const
+	{
+		std::vector<int> children;
+		for (int index = 0; ; ++index)
+		{
+			const std::optional<int> child = getObjectChild(parentHandle, index);
+			if (!child)
+			{
+				break;
+			}
+			children.push_back(*child);
+		}
+		return children;
+	}
+
+	std::optional<float> CoppeliaSimClient::getJointPosition(int jointHandle) const
+	{
+		simxFloat position = 0.0F;
+		const simxInt rc = simxGetJointPosition(clientID, jointHandle, &position, simx_opmode_blocking);
+		if (rc != simx_return_ok)
+		{
+			return std::nullopt;
+		}
+		return position;
+	}
+
+	bool CoppeliaSimClient::setJointTargetPosition(int jointHandle, float targetPosition) const
+	{
+		const simxInt rc = simxSetJointTargetPosition(clientID, jointHandle, targetPosition, simx_opmode_oneshot);
+		return rc == simx_return_ok;
+	}
+
+	bool CoppeliaSimClient::setJointTargetVelocity(int jointHandle, float targetVelocity) const
+	{
+		const simxInt rc = simxSetJointTargetVelocity(clientID, jointHandle, targetVelocity, simx_opmode_oneshot);
+		return rc == simx_return_ok;
+	}
+
+	bool CoppeliaSimClient::loadScene(const std::string& scenePathAndName) const
+	{
+		// options = 0: the scene path is resolved on the server (CoppeliaSim) side.
+		const simxInt rc = simxLoadScene(clientID, scenePathAndName.c_str(), 0, simx_opmode_blocking);
+		return rc == simx_return_ok;
+	}
+
+	bool CoppeliaSimClient::closeScene() const
+	{
+		const simxInt rc = simxCloseScene(clientID, simx_opmode_blocking);
+		return rc == simx_return_ok;
 	}
 
 	void CoppeliaSimClient::logMsg(const std::string& message) const

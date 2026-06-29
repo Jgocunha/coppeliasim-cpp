@@ -82,6 +82,28 @@ TEST_F(FunctionalTest, IsConnectedReflectsConnectionId)
 	EXPECT_FALSE(client.isConnected());
 }
 
+TEST_F(FunctionalTest, IsConnectedRespectsNoLogsOnDroppedConnection)
+{
+	CoppeliaSimClient& client = makeConnectedClient(LogMode::NO_LOGS);
+	record().connectionId = -1; // dropped
+
+	testing::internal::CaptureStdout();
+	EXPECT_FALSE(client.isConnected());
+	const std::string out = testing::internal::GetCapturedStdout();
+	EXPECT_TRUE(out.empty()); // NO_LOGS must not print
+}
+
+TEST_F(FunctionalTest, IsConnectedLogsToStdoutInLogCmdModeOnDroppedConnection)
+{
+	CoppeliaSimClient& client = makeConnectedClient(LogMode::LOG_CMD);
+	record().connectionId = -1; // dropped
+
+	testing::internal::CaptureStdout();
+	EXPECT_FALSE(client.isConnected());
+	const std::string out = testing::internal::GetCapturedStdout();
+	EXPECT_NE(out.find("Connection to CoppeliaSim lost."), std::string::npos);
+}
+
 // --- set* forwarding (success) --------------------------------------------
 
 TEST_F(FunctionalTest, SetIntegerSignalForwardsNameValueAndOneshotMode)
@@ -292,6 +314,196 @@ TEST_F(FunctionalTest, GetObjectQueriesReturnNulloptOnApiFailure)
 	EXPECT_FALSE(client.getObjectPosition(5).has_value());
 	EXPECT_FALSE(client.getObjectOrientation(5).has_value());
 	EXPECT_FALSE(client.getObjectPose(5).has_value());
+}
+
+// --- pause / ping ---------------------------------------------------------
+
+TEST_F(FunctionalTest, PauseSimulationCallsApiWithBlockingMode)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.pauseSimulation());
+	EXPECT_EQ(record().lastFunction, "simxPauseSimulation");
+	EXPECT_EQ(record().lastOpMode, simx_opmode_blocking);
+}
+
+TEST_F(FunctionalTest, PauseSimulationReturnsFalseOnApiFailure)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().returnCode = simx_return_remote_error_flag;
+	EXPECT_FALSE(client.pauseSimulation());
+}
+
+TEST_F(FunctionalTest, GetPingTimeReturnsProgrammedValue)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().nextPingTime = 17;
+	EXPECT_EQ(client.getPingTime(), 17);
+	EXPECT_EQ(record().lastFunction, "simxGetPingTime");
+}
+
+TEST_F(FunctionalTest, GetPingTimeReturnsNulloptOnApiFailure)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().returnCode = simx_return_timeout_flag;
+	EXPECT_FALSE(client.getPingTime().has_value());
+}
+
+// --- object setters -------------------------------------------------------
+
+TEST_F(FunctionalTest, SetObjectPositionForwardsHandleVectorFrameAndMode)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.setObjectPosition(5, Position{1.0f, 2.0f, 3.0f}));
+	EXPECT_EQ(record().lastFunction, "simxSetObjectPosition");
+	EXPECT_EQ(record().lastObjectHandle, 5);
+	EXPECT_FLOAT_EQ(record().lastVec3[0], 1.0f);
+	EXPECT_FLOAT_EQ(record().lastVec3[1], 2.0f);
+	EXPECT_FLOAT_EQ(record().lastVec3[2], 3.0f);
+	EXPECT_EQ(record().lastOpMode, simx_opmode_oneshot);
+}
+
+TEST_F(FunctionalTest, SetObjectOrientationForwardsEulerAngles)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.setObjectOrientation(6, Orientation{0.1f, 0.2f, 0.3f}));
+	EXPECT_EQ(record().lastFunction, "simxSetObjectOrientation");
+	EXPECT_EQ(record().lastObjectHandle, 6);
+	EXPECT_FLOAT_EQ(record().lastVec3[0], 0.1f);
+	EXPECT_FLOAT_EQ(record().lastVec3[2], 0.3f);
+}
+
+TEST_F(FunctionalTest, ObjectSettersReturnFalseOnApiFailure)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().returnCode = simx_return_timeout_flag;
+	EXPECT_FALSE(client.setObjectPosition(1, Position{}));
+	EXPECT_FALSE(client.setObjectOrientation(1, Orientation{}));
+}
+
+// --- object velocity ------------------------------------------------------
+
+TEST_F(FunctionalTest, GetObjectVelocityMapsLinearAndAngular)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().nextLinearVelocity[0] = 1.0f;
+	record().nextLinearVelocity[1] = 2.0f;
+	record().nextLinearVelocity[2] = 3.0f;
+	record().nextAngularVelocity[0] = 4.0f;
+	record().nextAngularVelocity[1] = 5.0f;
+	record().nextAngularVelocity[2] = 6.0f;
+
+	const auto v = client.getObjectVelocity(7);
+	ASSERT_TRUE(v.has_value());
+	EXPECT_FLOAT_EQ(v->linear.x, 1.0f);
+	EXPECT_FLOAT_EQ(v->linear.z, 3.0f);
+	EXPECT_FLOAT_EQ(v->angular.alpha, 4.0f);
+	EXPECT_FLOAT_EQ(v->angular.gamma, 6.0f);
+	EXPECT_EQ(record().lastObjectHandle, 7);
+}
+
+TEST_F(FunctionalTest, GetObjectVelocityReturnsNulloptOnApiFailure)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().returnCode = simx_return_novalue_flag;
+	EXPECT_FALSE(client.getObjectVelocity(7).has_value());
+}
+
+// --- object tree ----------------------------------------------------------
+
+TEST_F(FunctionalTest, GetObjectChildReturnsHandle)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().nextChildHandle = 42;
+	EXPECT_EQ(client.getObjectChild(1, 0), 42);
+	EXPECT_EQ(record().lastChildIndex, 0);
+}
+
+TEST_F(FunctionalTest, GetObjectChildReturnsNulloptWhenNoChild)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().nextChildHandle = -1; // API signals "no child" with -1
+	EXPECT_FALSE(client.getObjectChild(1, 5).has_value());
+}
+
+TEST_F(FunctionalTest, GetObjectChildrenReturnsSequenceThenStopsAtMinusOne)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().childHandleSequence = {10, 20, 30}; // index 3 returns -1 (terminator)
+
+	const std::vector<int> children = client.getObjectChildren(1);
+	EXPECT_EQ(children, (std::vector<int>{10, 20, 30}));
+}
+
+TEST_F(FunctionalTest, GetObjectChildrenIsEmptyWhenNoChildren)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().nextChildHandle = -1;
+	EXPECT_TRUE(client.getObjectChildren(1).empty());
+}
+
+// --- joint control --------------------------------------------------------
+
+TEST_F(FunctionalTest, GetJointPositionReturnsProgrammedValue)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().nextJointPosition = 1.57f;
+	const auto pos = client.getJointPosition(3);
+	ASSERT_TRUE(pos.has_value());
+	EXPECT_FLOAT_EQ(*pos, 1.57f);
+	EXPECT_EQ(record().lastObjectHandle, 3);
+}
+
+TEST_F(FunctionalTest, SetJointTargetPositionForwardsValue)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.setJointTargetPosition(3, 0.5f));
+	EXPECT_EQ(record().lastFunction, "simxSetJointTargetPosition");
+	EXPECT_EQ(record().lastObjectHandle, 3);
+	EXPECT_FLOAT_EQ(record().lastFloatValue, 0.5f);
+	EXPECT_EQ(record().lastOpMode, simx_opmode_oneshot);
+}
+
+TEST_F(FunctionalTest, SetJointTargetVelocityForwardsValue)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.setJointTargetVelocity(3, -2.0f));
+	EXPECT_EQ(record().lastFunction, "simxSetJointTargetVelocity");
+	EXPECT_FLOAT_EQ(record().lastFloatValue, -2.0f);
+}
+
+TEST_F(FunctionalTest, JointMethodsReportApiFailure)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().returnCode = simx_return_timeout_flag;
+	EXPECT_FALSE(client.getJointPosition(3).has_value());
+	EXPECT_FALSE(client.setJointTargetPosition(3, 0.0f));
+	EXPECT_FALSE(client.setJointTargetVelocity(3, 0.0f));
+}
+
+// --- scene management -----------------------------------------------------
+
+TEST_F(FunctionalTest, LoadSceneForwardsPath)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.loadScene("/scenes/test.ttt"));
+	EXPECT_EQ(record().lastFunction, "simxLoadScene");
+	EXPECT_EQ(record().lastStringValue, "/scenes/test.ttt");
+	EXPECT_EQ(record().lastOpMode, simx_opmode_blocking);
+}
+
+TEST_F(FunctionalTest, CloseSceneCallsApi)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	EXPECT_TRUE(client.closeScene());
+	EXPECT_EQ(record().lastFunction, "simxCloseScene");
+}
+
+TEST_F(FunctionalTest, SceneMethodsReturnFalseOnApiFailure)
+{
+	CoppeliaSimClient& client = makeConnectedClient();
+	record().returnCode = simx_return_remote_error_flag;
+	EXPECT_FALSE(client.loadScene("/x.ttt"));
+	EXPECT_FALSE(client.closeScene());
 }
 
 // --- logging --------------------------------------------------------------

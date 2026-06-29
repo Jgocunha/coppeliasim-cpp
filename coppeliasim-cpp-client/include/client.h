@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <memory>
+#include <vector>
 
 extern "C"
 {
@@ -45,6 +46,12 @@ namespace coppeliasim_cpp
 		Orientation orientation;
 	};
 
+	struct Velocity
+	{
+		Position linear;
+		Orientation angular;
+	};
+
 	class CoppeliaSimClient
 	{
 	private:
@@ -84,6 +91,9 @@ namespace coppeliasim_cpp
 		// Commands return true on success, false if the API call did not complete.
 		bool startSimulation() const;
 		bool stopSimulation() const;
+		bool pauseSimulation() const;
+
+		[[nodiscard]] std::optional<int> getPingTime() const;
 
 		bool setIntegerSignal(const std::string& signalName, int signalValue) const;
 		bool setFloatSignal(const std::string& signalName, float signalValue) const;
@@ -99,6 +109,24 @@ namespace coppeliasim_cpp
 		[[nodiscard]] std::optional<Pose> getObjectPose(int objectHandle) const;
 		[[nodiscard]] std::optional<Position> getObjectPosition(int objectHandle) const;
 		[[nodiscard]] std::optional<Orientation> getObjectOrientation(int objectHandle) const;
+		[[nodiscard]] std::optional<Velocity> getObjectVelocity(int objectHandle) const;
+
+		bool setObjectPosition(int objectHandle, const Position& position) const;
+		bool setObjectOrientation(int objectHandle, const Orientation& orientation) const;
+
+		// Returns the child at childIndex, or nullopt if the call failed or there is
+		// no such child (the API returns a handle of -1 past the last child).
+		[[nodiscard]] std::optional<int> getObjectChild(int parentHandle, int childIndex) const;
+		[[nodiscard]] std::vector<int> getObjectChildren(int parentHandle) const;
+
+		// Joint control.
+		[[nodiscard]] std::optional<float> getJointPosition(int jointHandle) const;
+		bool setJointTargetPosition(int jointHandle, float targetPosition) const;
+		bool setJointTargetVelocity(int jointHandle, float targetVelocity) const;
+
+		// Scene management. loadScene's path is resolved on the server (CoppeliaSim) side.
+		bool loadScene(const std::string& scenePathAndName) const;
+		bool closeScene() const;
 
 		void setLogMode(LogMode mode);
 		void logMsg(const std::string& message) const;
