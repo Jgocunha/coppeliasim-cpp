@@ -1,17 +1,8 @@
-
 #pragma once
 
-#include <iostream>
-#ifdef _WIN32
-#include <windows.h>
-#endif
+#include <optional>
 #include <string>
-#include <algorithm>
 #include <memory>
-
-#ifdef _WIN32
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
 
 extern "C"
 {
@@ -29,31 +20,29 @@ namespace coppeliasim_cpp
 		LOG_COPPELIA_CMD
 	};
 
+	// Relative-to-world-frame handle for the legacy remote API object queries.
+	inline constexpr simxInt kWorldFrame = -1;
+
 	struct Position
 	{
-		float x, y, z;
-
-		// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) -- x/y/z are an intrinsic vector triple.
-		Position(float x, float y, float z) : x(x), y(y), z(z) {}
-		Position() : x(0), y(0), z(0) {}
+		// x/y/z are an intrinsic vector triple; aggregate init keeps the type trivial.
+		float x{0};
+		float y{0};
+		float z{0};
 	};
 
 	struct Orientation
 	{
-		float alpha, beta, gamma;
-
-		// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) -- Euler angles are an intrinsic triple.
-		Orientation(float alpha, float beta, float gamma) : alpha(alpha), beta(beta), gamma(gamma) {}
-		Orientation() : alpha(0), beta(0), gamma(0) {}
+		// Euler angles are an intrinsic triple.
+		float alpha{0};
+		float beta{0};
+		float gamma{0};
 	};
 
 	struct Pose
 	{
 		Position position;
 		Orientation orientation;
-
-		Pose(Position position, Orientation orientation) : position(position), orientation(orientation) {}
-		Pose() = default;
 	};
 
 	class CoppeliaSimClient
@@ -63,41 +52,55 @@ namespace coppeliasim_cpp
 		simxInt connectionPort;
 		LogMode logMode;
 		std::unique_ptr<simxChar[]> connectionAddress; // NOLINT(modernize-avoid-c-arrays) -- C string buffer for the C API.
+
 	public:
 		explicit CoppeliaSimClient(const std::string& connectionAddress = "127.0.0.1",
 			int connectionPort = 19999,
-			LogMode logMode = LogMode::LOG_COPPELIA_CMD);
+			LogMode logMode = LogMode::NO_LOGS);
 
-		// Owns a connection handle that the destructor releases via simxFinish;
-		// neither copyable nor movable to avoid a double-release.
+		// Owns a connection handle that the destructor releases via simxFinish.
+		// Not copyable. Movable: the move leaves the source with an inert handle
+		// (clientID == -1) so its destructor's simxFinish becomes a no-op.
 		CoppeliaSimClient(const CoppeliaSimClient&) = delete;
 		CoppeliaSimClient& operator=(const CoppeliaSimClient&) = delete;
-		CoppeliaSimClient(CoppeliaSimClient&&) = delete;
-		CoppeliaSimClient& operator=(CoppeliaSimClient&&) = delete;
+		CoppeliaSimClient(CoppeliaSimClient&& other) noexcept;
+		CoppeliaSimClient& operator=(CoppeliaSimClient&& other) noexcept;
 
-		bool initialize();
+		~CoppeliaSimClient();
+
+		// Construct and connect in one step. Returns nullopt if the connection
+		// could not be established, so a returned client is always connected.
+		[[nodiscard]] static std::optional<CoppeliaSimClient> connect(
+			const std::string& connectionAddress = "127.0.0.1",
+			int connectionPort = 19999,
+			LogMode logMode = LogMode::NO_LOGS);
+
+		// Establishes the connection. Prefer connect(); kept for callers that
+		// construct first. Returns false (and leaves the client unconnected) on failure.
+		[[nodiscard]] bool initialize();
 		[[nodiscard]] bool isConnected() const;
 		[[nodiscard]] int getClientID() const;
 
-		void startSimulation() const;
-		void stopSimulation() const;
+		// Commands return true on success, false if the API call did not complete.
+		bool startSimulation() const;
+		bool stopSimulation() const;
 
-		void setIntegerSignal(const std::string& signalName, int signalValue) const;
-		void setFloatSignal(const std::string& signalName, const float& signalValue) const;
-		void setStringSignal(const std::string& signalName, const std::string& signalValue) const;
-		[[nodiscard]] int getIntegerSignal(const std::string& signalName) const;
-		[[nodiscard]] float getFloatSignal(const std::string& signalName) const;
-		[[nodiscard]] std::string getStringSignal(const std::string& signalName) const;
+		bool setIntegerSignal(const std::string& signalName, int signalValue) const;
+		bool setFloatSignal(const std::string& signalName, float signalValue) const;
+		bool setStringSignal(const std::string& signalName, const std::string& signalValue) const;
 
-		[[nodiscard]] int getObjectHandle(const std::string& objectName) const;
-		[[nodiscard]] Pose getObjectPose(int objectHandle) const;
-		[[nodiscard]] Position getObjectPosition(int objectHandle) const;
-		[[nodiscard]] Orientation getObjectOrientation(int objectHandle) const;
+		// Queries return nullopt if the API call failed; the value is never
+		// fabricated from an unwritten out-parameter.
+		[[nodiscard]] std::optional<int> getIntegerSignal(const std::string& signalName) const;
+		[[nodiscard]] std::optional<float> getFloatSignal(const std::string& signalName) const;
+		[[nodiscard]] std::optional<std::string> getStringSignal(const std::string& signalName) const;
+
+		[[nodiscard]] std::optional<int> getObjectHandle(const std::string& objectName) const;
+		[[nodiscard]] std::optional<Pose> getObjectPose(int objectHandle) const;
+		[[nodiscard]] std::optional<Position> getObjectPosition(int objectHandle) const;
+		[[nodiscard]] std::optional<Orientation> getObjectOrientation(int objectHandle) const;
 
 		void setLogMode(LogMode mode);
-		void log_msg(const std::string& message) const;
-
-		~CoppeliaSimClient();
+		void logMsg(const std::string& message) const;
 	};
 }
-

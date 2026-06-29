@@ -51,7 +51,7 @@ extern "C"
 		r.lastFunction = "simxStartSimulation";
 		r.lastClientID = clientID;
 		r.lastOpMode = operationMode;
-		return simx_return_ok;
+		return r.returnCode;
 	}
 
 	simxInt simxStopSimulation(simxInt clientID, simxInt operationMode)
@@ -61,7 +61,7 @@ extern "C"
 		r.lastFunction = "simxStopSimulation";
 		r.lastClientID = clientID;
 		r.lastOpMode = operationMode;
-		return simx_return_ok;
+		return r.returnCode;
 	}
 
 	simxInt simxSetIntegerSignal(simxInt clientID, const simxChar* signalName,
@@ -74,7 +74,7 @@ extern "C"
 		r.lastSignalName = signalName;
 		r.lastIntValue = signalValue;
 		r.lastOpMode = operationMode;
-		return simx_return_ok;
+		return r.returnCode;
 	}
 
 	simxInt simxSetFloatSignal(simxInt clientID, const simxChar* signalName,
@@ -87,7 +87,7 @@ extern "C"
 		r.lastSignalName = signalName;
 		r.lastFloatValue = signalValue;
 		r.lastOpMode = operationMode;
-		return simx_return_ok;
+		return r.returnCode;
 	}
 
 	simxInt simxSetStringSignal(simxInt clientID, const simxChar* signalName,
@@ -101,7 +101,7 @@ extern "C"
 		r.lastStringValue.assign(reinterpret_cast<const char*>(signalValue), signalLength);
 		r.lastStringLength = signalLength;
 		r.lastOpMode = operationMode;
-		return simx_return_ok;
+		return r.returnCode;
 	}
 
 	simxInt simxGetIntegerSignal(simxInt clientID, const simxChar* signalName,
@@ -113,6 +113,10 @@ extern "C"
 		r.lastClientID = clientID;
 		r.lastSignalName = signalName;
 		r.lastOpMode = operationMode;
+		if (r.returnCode != simx_return_ok)
+		{
+			return r.returnCode; // mimic the real API: out-param left untouched on failure
+		}
 		*signalValue = r.nextIntSignal;
 		return simx_return_ok;
 	}
@@ -126,6 +130,10 @@ extern "C"
 		r.lastClientID = clientID;
 		r.lastSignalName = signalName;
 		r.lastOpMode = operationMode;
+		if (r.returnCode != simx_return_ok)
+		{
+			return r.returnCode;
+		}
 		*signalValue = r.nextFloatSignal;
 		return simx_return_ok;
 	}
@@ -139,6 +147,12 @@ extern "C"
 		r.lastClientID = clientID;
 		r.lastSignalName = signalName;
 		r.lastOpMode = operationMode;
+		if (r.returnCode != simx_return_ok)
+		{
+			// Mimic the real API: out-params left untouched on failure, so the
+			// client must not read them.
+			return r.returnCode;
+		}
 		g_stringSignalBuffer = r.nextStringSignal;
 		*signalValue = reinterpret_cast<simxUChar*>(g_stringSignalBuffer.data());
 		*signalLength = static_cast<simxInt>(g_stringSignalBuffer.size());
@@ -154,6 +168,10 @@ extern "C"
 		r.lastClientID = clientID;
 		r.lastObjectName = objectName;
 		r.lastOpMode = operationMode;
+		if (r.returnCode != simx_return_ok)
+		{
+			return r.returnCode;
+		}
 		*handle = r.nextHandle;
 		return simx_return_ok;
 	}
@@ -167,6 +185,10 @@ extern "C"
 		r.lastClientID = clientID;
 		r.lastObjectHandle = objectHandle;
 		r.lastOpMode = operationMode;
+		if (r.returnCode != simx_return_ok)
+		{
+			return r.returnCode;
+		}
 		position[0] = r.nextPosition[0];
 		position[1] = r.nextPosition[1];
 		position[2] = r.nextPosition[2];
@@ -182,6 +204,10 @@ extern "C"
 		r.lastClientID = clientID;
 		r.lastObjectHandle = objectHandle;
 		r.lastOpMode = operationMode;
+		if (r.returnCode != simx_return_ok)
+		{
+			return r.returnCode;
+		}
 		eulerAngles[0] = r.nextOrientation[0];
 		eulerAngles[1] = r.nextOrientation[1];
 		eulerAngles[2] = r.nextOrientation[2];

@@ -74,12 +74,14 @@ Clean up resources by destroying the CoppeliaSimClient instance. The destructor 
 
 ### Logging
 
-The CoppeliaSim C++ Client provides a logging mechanism to output messages. You can control where the messages are logged by adjusting the preprocessor definitions in the client.h file:
+The CoppeliaSim C++ Client provides a logging mechanism to output messages. You control where messages go by passing a `LogMode` to the constructor (or `connect`); the default is `LogMode::NO_LOGS`:
 
-- `LOG_ON_CMD`: Set to true to log messages to the console.
-- `LOG_ON_COPPELIA`: Set to true to log messages to CoppeliaSim's status bar.
+- `LogMode::NO_LOGS`: no logging (default).
+- `LogMode::LOG_CMD`: log messages to the console.
+- `LogMode::LOG_COPPELIA`: log messages to CoppeliaSim's status bar.
+- `LogMode::LOG_COPPELIA_CMD`: log to both.
 
-Adjust these definitions according to your logging preferences.
+You can change it at runtime with `setLogMode(LogMode)`.
 
 ## Contributing
 

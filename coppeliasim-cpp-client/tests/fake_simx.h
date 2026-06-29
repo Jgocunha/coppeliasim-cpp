@@ -37,6 +37,7 @@ namespace fake_simx
 		// --- programmable behaviour (what the next/all calls return) ---
 		int startReturn = 0;          // value simxStart returns (clientID, or -1)
 		int connectionId = 0;         // value simxGetConnectionId returns
+		int returnCode = simx_return_ok; // rc returned by every simx* command/query below
 		int nextIntSignal = 0;        // out-value for simxGetIntegerSignal
 		float nextFloatSignal = 0.0f; // out-value for simxGetFloatSignal
 		std::string nextStringSignal; // out-bytes for simxGetStringSignal

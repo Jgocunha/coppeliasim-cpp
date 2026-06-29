@@ -6,9 +6,9 @@ coppeliasim-cpp is a repository that contains C++ code and examples for interfac
 
 Before running the project, make sure you have the following prerequisites:
 
-- CoppeliaSim: Install CoppeliaSim on your machine. 
+- CoppeliaSim: Install CoppeliaSim to *run* against a live simulator (the library
+  vendors the legacy remote API sources, so CoppeliaSim is not required to build).
   - You can download it from the [Coppelia Robotics website](https://www.coppeliarobotics.com/downloads).
-  - Set the `COPPELIASIM_ROOT_DIR` environment variable to the path of your CoppeliaSim installation directory.
 - CMake: Make sure CMake is installed on your system to build the project.
 
 ## Project Overview

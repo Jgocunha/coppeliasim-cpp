@@ -1,4 +1,4 @@
-﻿#include "coppeliasim-cpp-client.h"
+#include "coppeliasim-cpp-client.h"
 
 #include <thread>
 #include <chrono>
@@ -6,34 +6,41 @@
 
 int main()
 {
-	coppeliasim_cpp::CoppeliaSimClient client;
-
-	if (client.initialize())
+	auto client = coppeliasim_cpp::CoppeliaSimClient::connect(
+		"127.0.0.1", 19999, coppeliasim_cpp::LogMode::LOG_CMD);
+	if (!client)
 	{
-		client.log_msg("You can log info to the Command line and CoppeliaSim!");
-
-		client.startSimulation();
-		client.log_msg("Simulation started.");
-		const int obj_handle = client.getObjectHandle("Cuboid");
-
-		while(client.isConnected())
-		{
-			const coppeliasim_cpp::Pose obj_pose = client.getObjectPose(obj_handle);
-			std::cout << "Object position: " << obj_pose.position.x << ", " << obj_pose.position.y << ", " << obj_pose.position.z << std::endl;
-			std::cout << "Object orientation: " << obj_pose.orientation.alpha << ", " << obj_pose.orientation.beta << ", " << obj_pose.orientation.gamma << std::endl;
-
-			const coppeliasim_cpp::Position obj_pos = client.getObjectPosition(obj_handle);
-			std::cout << "Object position: " << obj_pos.x << ", " << obj_pos.y << ", " << obj_pos.z << std::endl;
-
-			const coppeliasim_cpp::Orientation obj_ori = client.getObjectOrientation(obj_handle);
-			std::cout << "Object orientation: " << obj_ori.alpha << ", " << obj_ori.beta << ", " << obj_ori.gamma << std::endl;
-			
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-	}
-	else
-	{
+		std::cerr << "Failed to connect to CoppeliaSim." << '\n';
 		return 1;
+	}
+
+	client->logMsg("You can log info to the Command line and CoppeliaSim!");
+
+	if (!client->startSimulation())
+	{
+		std::cerr << "Failed to start the simulation." << '\n';
+		return 1;
+	}
+
+	const std::optional<int> objHandle = client->getObjectHandle("Cuboid");
+	if (!objHandle)
+	{
+		std::cerr << "Object 'Cuboid' not found." << '\n';
+		return 1;
+	}
+
+	while (client->isConnected())
+	{
+		const std::optional<coppeliasim_cpp::Pose> pose = client->getObjectPose(*objHandle);
+		if (pose)
+		{
+			std::cout << "Object position: " << pose->position.x << ", "
+				<< pose->position.y << ", " << pose->position.z << '\n';
+			std::cout << "Object orientation: " << pose->orientation.alpha << ", "
+				<< pose->orientation.beta << ", " << pose->orientation.gamma << '\n';
+		}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
 	return 0;

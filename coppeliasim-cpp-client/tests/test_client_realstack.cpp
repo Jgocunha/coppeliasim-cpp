@@ -2,7 +2,7 @@
 // coppeliasim-cpp-client library, including the genuine simx* implementation).
 //
 // No simulator is running, so these verify the graceful-failure behaviour:
-// the client must report "not connected" and fail initialize() cleanly without
+// the client must report "not connected" and fail to connect cleanly without
 // hanging or crashing.
 #include <gtest/gtest.h>
 
@@ -25,6 +25,11 @@ TEST(RealStackTest, InitializeFailsAgainstDeadPort)
 	EXPECT_FALSE(client.initialize());
 	EXPECT_EQ(client.getClientID(), -1);
 	EXPECT_FALSE(client.isConnected());
-	// Destructor (simxFinish) runs here and must not hang -- enforced by the
-	// per-test CTest timeout configured in tests/CMakeLists.txt.
+	// Destructor (simxFinish) runs here and must not hang.
+}
+
+TEST(RealStackTest, ConnectReturnsNulloptAgainstDeadPort)
+{
+	auto client = CoppeliaSimClient::connect("127.0.0.1", 65501, LogMode::NO_LOGS);
+	EXPECT_FALSE(client.has_value());
 }
