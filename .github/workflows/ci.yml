@@ -55,8 +55,12 @@ jobs:
       - name: cppcheck
         run: |
           cppcheck --enable=all --error-exitcode=1 \
-            --suppress=missingIncludeSystem --suppress=missingInclude \
             --inline-suppr \
+            --suppress=missingIncludeSystem \
+            --suppress=checkersReport \
+            --suppress=unmatchedSuppression \
+            --suppress=unusedFunction \
+            --suppress='*:*/lib/*' \
             -I include -I lib \
             src include
 

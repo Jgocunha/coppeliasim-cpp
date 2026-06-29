@@ -64,7 +64,7 @@ namespace coppeliasim_cpp
 		LogMode logMode;
 		std::unique_ptr<simxChar[]> connectionAddress; // NOLINT(modernize-avoid-c-arrays) -- C string buffer for the C API.
 	public:
-		CoppeliaSimClient(const std::string& connectionAddress = "127.0.0.1",
+		explicit CoppeliaSimClient(const std::string& connectionAddress = "127.0.0.1",
 			int connectionPort = 19999,
 			LogMode logMode = LogMode::LOG_COPPELIA_CMD);
 
