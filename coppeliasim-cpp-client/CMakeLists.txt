@@ -134,3 +134,6 @@ set(EXE_PROJECT ${CMAKE_PROJECT_NAME}-exe)
 add_executable(${EXE_PROJECT} "coppeliasim-cpp-client.cpp")
 #target_include_directories(${EXE_PROJECT} PRIVATE include)
 target_link_libraries(${EXE_PROJECT} PRIVATE ${CMAKE_PROJECT_NAME})
+
+# Test suite
+add_subdirectory(tests)
