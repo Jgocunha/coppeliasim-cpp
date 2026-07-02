@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub issue templates (bug report, feature request)
 - GitHub pull request template
 - Issue and feature backlog in `.claude/`
+- Top-level MIT `LICENSE` (the vendored CoppeliaSim sources under `lib/` keep their own license)
+- `.clang-format` codifying the existing style, enforced by a CI format check
 
 ### Changed
 - Query methods now return `std::optional<T>` and command methods return `bool`, so API-call
@@ -30,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Position`/`Orientation`/`Pose` are now aggregates
 - Renamed `log_msg` to `logMsg`; `setFloatSignal` now takes `float` by value
 - Made the library compile on Linux/macOS (guarded Windows-only includes)
+- Rewrote the root README to describe the vendored single-library layout
+- Moved the demo executable to `examples/pose_tracker.cpp` and removed the
+  `coppeliasim-cpp-client.h` shim header
+- Only the remote-API client sources are compiled now; the plugin-side `simLib/`
+  tree is kept as vendored reference (its `simConst.h` still ships, as `extApi.h` needs it)
+- CMake version is declared once via `project(VERSION 0.0.1)` and matches the CHANGELOG
 
 ### Fixed
 - Out-of-bounds read in `isConnected()`/`getStringSignal()` when called with an invalid
