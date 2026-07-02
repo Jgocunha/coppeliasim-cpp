@@ -46,20 +46,14 @@ if(ENABLE_SANITIZERS)
 endif()
 
 # Set sources
+# Only the legacy remote API client sources are compiled. The rest of the
+# vendored simLib/ tree is the plugin-side API and is kept for reference only
+# (shared_memory.c would be needed again if DO_NOT_USE_SHARED_MEMORY were removed).
 set(sources
     src/client.cpp
 
     lib/extApi.c
     lib/extApiPlatform.c
-
-    lib/simLib/luaFunctionData.cpp
-    lib/simLib/luaFunctionDataItem.cpp
-    lib/simLib/scriptFunctionData.cpp
-    lib/simLib/scriptFunctionDataItem.cpp
-    lib/simLib/shared_memory.c
-    lib/simLib/simLib.cpp
-    lib/simLib/socketInConnection.cpp
-    lib/simLib/socketOutConnection.cpp
 )
 
 # Set headers
@@ -71,19 +65,9 @@ set(api_headers
     lib/extApiPlatform.h
 	lib/extApiInternal.h
 )
+# extApi.h includes <simLib/simConst.h>, so it must ship with the library.
 set(simLib_headers
-    lib/simLib/luaFunctionData.h
-	lib/simLib/luaFunctionDataItem.h
-	lib/simLib/scriptFunctionData.h
-	lib/simLib/scriptFunctionDataItem.h
-	lib/simLib/shared_memory.h
     lib/simLib/simConst.h
-    lib/simLib/simExp.h
-	lib/simLib/simLib.h
-    lib/simLib/simTypes.h
-	lib/simLib/socketInConnection.h
-	lib/simLib/socketOutConnection.h
-    lib/simLib/_dirent.h
 )
 
 add_library(coppeliasim-cpp-client
