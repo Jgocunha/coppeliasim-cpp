@@ -4,7 +4,6 @@
 #include <iostream>
 #include <thread>
 
-
 int main()
 {
 	auto client = coppeliasim_cpp::CoppeliaSimClient::connect(
@@ -36,9 +35,9 @@ int main()
 		if (pose)
 		{
 			std::cout << "Object position: " << pose->position.x << ", "
-				<< pose->position.y << ", " << pose->position.z << '\n';
+					  << pose->position.y << ", " << pose->position.z << '\n';
 			std::cout << "Object orientation: " << pose->orientation.alpha << ", "
-				<< pose->orientation.beta << ", " << pose->orientation.gamma << '\n';
+					  << pose->orientation.beta << ", " << pose->orientation.gamma << '\n';
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));

@@ -60,3 +60,10 @@ Define the following preprocessor definitions in your project configuration
 - CoppeliaSim Documentation: Check out the official [CoppeliaSim documentation](https://www.coppeliarobotics.com/helpFiles/index.html) for more information on using the legacy remote API and working with the simulation environment.
 
 Feel free to modify and extend the project according to your needs. If you encounter any issues or have questions, please open an issue in this repository.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). The vendored
+CoppeliaSim legacy remote API sources under `coppeliasim-cpp-client/lib/` are
+third-party code distributed under their own license — see
+[`coppeliasim-cpp-client/lib/license.txt`](coppeliasim-cpp-client/lib/license.txt).
