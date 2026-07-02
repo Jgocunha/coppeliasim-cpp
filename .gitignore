@@ -1,6 +1,7 @@
 *.vs
 
 build/
+build-check/
 build-ninja/
 # Prerequisites
 *.d

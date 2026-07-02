@@ -1,16 +1,11 @@
 ﻿cmake_minimum_required (VERSION 3.15)
 
 project(coppeliasim-cpp-client
+    VERSION 0.0.1
     DESCRIPTION "A C++ library to interface with Coppeliasim."
-    #LANGUAGES CXX
 )
 
 enable_testing()
-
-# Define library version
-set(COPPELIASIM_CLIENT_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
-set(COPPELIASIM_CLIENT_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
-set(COPPELIASIM_CLIENT_VERSION ${COPPELIASIM_CLIENT_VERSION_MAJOR}.${COPPELIASIM_CLIENT_VERSION_MINOR} CACHE STRING "version" FORCE)
 
 set(COPPELIASIM_CLIENT_LIB_PREFIX "release")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -47,22 +42,14 @@ if(ENABLE_SANITIZERS)
 endif()
 
 # Set sources
+# Only the legacy remote API client sources are compiled. The rest of the
+# vendored simLib/ tree is the plugin-side API and is kept for reference only
+# (shared_memory.c would be needed again if DO_NOT_USE_SHARED_MEMORY were removed).
 set(sources
     src/client.cpp
 
     lib/extApi.c
     lib/extApiPlatform.c
-
-    lib/simLib/luaFunctionData.cpp
-    lib/simLib/luaFunctionDataItem.cpp
-    lib/simLib/scriptFunctionData.cpp
-    lib/simLib/scriptFunctionDataItem.cpp
-    lib/simLib/shared_memory.c
-    #lib/simLib/simLib-old.cpp
-    #lib/simLib/simLib-old2.cpp
-    lib/simLib/simLib.cpp
-    lib/simLib/socketInConnection.cpp
-    lib/simLib/socketOutConnection.cpp
 )
 
 # Set headers
@@ -74,21 +61,9 @@ set(api_headers
     lib/extApiPlatform.h
 	lib/extApiInternal.h
 )
+# extApi.h includes <simLib/simConst.h>, so it must ship with the library.
 set(simLib_headers
-    lib/simLib/luaFunctionData.h
-	lib/simLib/luaFunctionDataItem.h
-	lib/simLib/scriptFunctionData.h
-	lib/simLib/scriptFunctionDataItem.h
-	lib/simLib/shared_memory.h
     lib/simLib/simConst.h
-    lib/simLib/simExp.h
-	#lib/simLib/simLib-old.h
-	#lib/simLib/simLib-old2.h
-	lib/simLib/simLib.h
-    lib/simLib/simTypes.h
-	lib/simLib/socketInConnection.h
-	lib/simLib/socketOutConnection.h
-    lib/simLib/_dirent.h
 )
 
 add_library(coppeliasim-cpp-client
@@ -109,15 +84,16 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     COPPELIASIM_CLIENT=1
-    COPPELIASIM_CLIENT_VERSION_MAJOR=${COPPELIASIM_CLIENT_VERSION_MAJOR}
-    COPPELIASIM_CLIENT_VERSION_MINOR=${COPPELIASIM_CLIENT_VERSION_MINOR}
+    COPPELIASIM_CLIENT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    COPPELIASIM_CLIENT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    COPPELIASIM_CLIENT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
     NON_MATLAB_PARSING 
     MAX_EXT_API_CONNECTIONS=255 
     DO_NOT_USE_SHARED_MEMORY
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    OUTPUT_NAME "${PROJECT_NAME}-${COPPELIASIM_CLIENT_VERSION}"
+    OUTPUT_NAME "${PROJECT_NAME}-${PROJECT_VERSION}"
     POSITION_INDEPENDENT_CODE ON
 )
 
@@ -131,7 +107,7 @@ install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
 include(CMakePackageConfigHelpers)
 set(version_file "${CMAKE_CURRENT_BINARY_DIR}/cmake/${PROJECT_NAME}-config-version.cmake")
 write_basic_package_version_file(${version_file}
-    VERSION ${COPPELIASIM_CLIENT_VERSION}
+    VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
@@ -146,11 +122,10 @@ install(EXPORT ${PROJECT_NAME}Targets DESTINATION ${COPPELIASIM_CLIENT_CMAKE_CON
     FILE ${PROJECT_NAME}-config.cmake
 )
 
-# Add executable project
+# Example executables
 if(BUILD_EXAMPLES)
-    set(EXE_PROJECT ${PROJECT_NAME}-exe)
-    add_executable(${EXE_PROJECT} "coppeliasim-cpp-client.cpp")
-    target_link_libraries(${EXE_PROJECT} PRIVATE ${PROJECT_NAME})
+    add_executable(pose-tracker-example examples/pose_tracker.cpp)
+    target_link_libraries(pose-tracker-example PRIVATE ${PROJECT_NAME})
 endif()
 
 # Test suite
