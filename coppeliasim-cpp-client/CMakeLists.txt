@@ -2,7 +2,6 @@
 
 project(coppeliasim-cpp-client
     DESCRIPTION "A C++ library to interface with Coppeliasim."
-    #LANGUAGES CXX
 )
 
 enable_testing()
@@ -58,8 +57,6 @@ set(sources
     lib/simLib/scriptFunctionData.cpp
     lib/simLib/scriptFunctionDataItem.cpp
     lib/simLib/shared_memory.c
-    #lib/simLib/simLib-old.cpp
-    #lib/simLib/simLib-old2.cpp
     lib/simLib/simLib.cpp
     lib/simLib/socketInConnection.cpp
     lib/simLib/socketOutConnection.cpp
@@ -82,8 +79,6 @@ set(simLib_headers
 	lib/simLib/shared_memory.h
     lib/simLib/simConst.h
     lib/simLib/simExp.h
-	#lib/simLib/simLib-old.h
-	#lib/simLib/simLib-old2.h
 	lib/simLib/simLib.h
     lib/simLib/simTypes.h
 	lib/simLib/socketInConnection.h
@@ -146,11 +141,10 @@ install(EXPORT ${PROJECT_NAME}Targets DESTINATION ${COPPELIASIM_CLIENT_CMAKE_CON
     FILE ${PROJECT_NAME}-config.cmake
 )
 
-# Add executable project
+# Example executables
 if(BUILD_EXAMPLES)
-    set(EXE_PROJECT ${PROJECT_NAME}-exe)
-    add_executable(${EXE_PROJECT} "coppeliasim-cpp-client.cpp")
-    target_link_libraries(${EXE_PROJECT} PRIVATE ${PROJECT_NAME})
+    add_executable(pose-tracker-example examples/pose_tracker.cpp)
+    target_link_libraries(pose-tracker-example PRIVATE ${PROJECT_NAME})
 endif()
 
 # Test suite

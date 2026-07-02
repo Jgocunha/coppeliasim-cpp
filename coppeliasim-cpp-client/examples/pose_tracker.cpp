@@ -1,7 +1,8 @@
-#include "coppeliasim-cpp-client.h"
+#include "client.h"
 
-#include <thread>
 #include <chrono>
+#include <iostream>
+#include <thread>
 
 
 int main()

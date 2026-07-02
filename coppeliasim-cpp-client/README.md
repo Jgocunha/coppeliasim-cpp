@@ -29,7 +29,9 @@ Use the `connect()` factory. It establishes the connection and returns a
 returned client is always connected:
 
 ```cpp
-#include "coppeliasim-cpp-client.h"
+#include "client.h"
+
+#include <iostream>
 
 int main()
 {
